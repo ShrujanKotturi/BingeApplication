@@ -43,7 +43,7 @@ module.exports = function (sequelize, DataTypes) {
             type: DataTypes.INTEGER,
             allowNull: false,
             validate: {
-                isNumeric : true
+                isNumeric: true
             }
         },
         score: {
@@ -81,7 +81,7 @@ module.exports = function (sequelize, DataTypes) {
         instanceMethods: {
             toPublicJSON: function () {
                 var json = this.toJSON();
-                return _.pick(json, 'userId', 'passwordHash', 'isActive', 'age', 'score', 'logNotifications','appNotifications','quickLog','sendMotivationalMessages','playGame');
+                return _.pick(json, 'userId', 'isActive', 'age', 'score', 'logNotifications', 'appNotifications', 'quickLog', 'sendMotivationalMessages', 'playGame');
             }
         }
     }, {
@@ -127,7 +127,7 @@ module.exports = function (sequelize, DataTypes) {
             type: DataTypes.BOOLEAN,
             defaultValue: false
         }
-    },{
+    }, {
         hooks: {
             beforeValidate: function (researcher, options) {
                 if (typeof researcher.supporterId === 'string') {
@@ -138,7 +138,7 @@ module.exports = function (sequelize, DataTypes) {
         instanceMethods: {
             toPublicJSON: function () {
                 var json = this.toJSON();
-                return _.pick(json,  'supporterId', 'passwordHash',  'contactNumber', 'isAdmin');
+                return _.pick(json, 'supporterId', 'contactNumber', 'isAdmin');
             }
         }
     }, {
@@ -172,28 +172,41 @@ module.exports = function (sequelize, DataTypes) {
             type: DataTypes.STRING,
             allowNull: true,
             validate: {
-                isUrl : true
+                isUrl: true
             }
         },
         latitude: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.FLOAT,
             allowNull: true,
             defaultValue: null,
-            validate: { min: -90, max: 90 }
+            validate: {
+                min: -90,
+                max: 90
+            }
         },
         longitude: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.FLOAT,
             allowNull: true,
             defaultValue: null,
-            validate: { min: -180, max: 180 }
+            validate: {
+                min: -180,
+                max: 180
+            }
         },
         feelingBinge: {
-            type:   DataTypes.ENUM,
+            type: DataTypes.ENUM,
             values: ['yes', 'no']
         },
         feelingVomiting: {
-            type:   DataTypes.ENUM,
+            type: DataTypes.ENUM,
             values: ['yes', 'no']
+        },
+        returnType: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            validate: {
+                len: [0, 10]
+            }
         }
     }, {
         timestamps: true,
@@ -223,7 +236,7 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: false
         },
         feelingTired: {
-            type:   DataTypes.ENUM,
+            type: DataTypes.ENUM,
             values: ['yes', 'no']
         }
     }, {
@@ -343,7 +356,7 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: true
         },
         isAdminShareable: {
-            type:   DataTypes.ENUM,
+            type: DataTypes.ENUM,
             values: ['yes', 'no'],
             defaultValue: 'no'
         }
@@ -397,7 +410,7 @@ module.exports = function (sequelize, DataTypes) {
         deviceId: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            validate:{
+            validate: {
                 isNumeric: true
             }
         },
@@ -406,7 +419,7 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: false,
             defaultValue: sequelize.fn('NOW')
         },
-        jwtToken: {
+        fcmToken: {
             type: DataTypes.STRING,
             allowNull: true
         }
@@ -431,14 +444,14 @@ module.exports = function (sequelize, DataTypes) {
         imageUrl: {
             type: DataTypes.STRING,
             allowNull: true,
-            validate:{
+            validate: {
                 isUrl: true
             }
         },
         pdfUrl: {
             type: DataTypes.STRING,
             allowNull: true,
-            validate:{
+            validate: {
                 isUrl: true
             }
         },
