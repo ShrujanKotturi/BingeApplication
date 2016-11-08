@@ -56,17 +56,13 @@ module.exports = function (sequelize, DataTypes) {
         },
         appNotifications: {
             type: DataTypes.BOOLEAN,
-            defaultValue: false
+            defaultValue: true
         },
         quickLog: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
         },
         sendMotivationalMessages: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false
-        },
-        playGame: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
         }
@@ -136,7 +132,7 @@ module.exports = function (sequelize, DataTypes) {
             }
         },
         instanceMethods: {
-            toPublicJSON: function() {
+            toPublicJSON: function () {
                 var json = this.toJSON();
                 return _.pick(json, 'supporterId', 'contactNumber', 'isAdmin');
             }

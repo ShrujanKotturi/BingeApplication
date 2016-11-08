@@ -8,7 +8,7 @@ var express = require('express'),
     cryptojs = require('crypto-js'),
     jwt = require('jsonwebtoken'),
     adminAuthenticate = require('../middleware/supporterAuthenticate');
-;
+
 var router = express.Router();
 var db = require('../db');
 var message = {},
@@ -78,9 +78,9 @@ router.get('/login', function (req, res) {
 });
 
 router.post('/createUser', adminAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'userId', 'password', 'age');
+    var body = _.pick(req.body, 'userId', 'password', 'age', 'supporterId');
     console.log(body);
-    if (typeof body.userId !== 'string' || typeof body.password !== 'string' || typeof body.age !== 'string') {
+    if (typeof body.userId !== 'string' || typeof body.password !== 'string' || typeof body.age !== 'string'|| typeof body.supporterId !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -91,7 +91,8 @@ router.post('/createUser', adminAuthenticate, function (req, res) {
     db.app.users.build({
         userId: body.userId,
         password: body.password,
-        age: body.age
+        age: body.age,
+        researcherSupporterId : body.supporterId
     }).save()
         .then(function (savedObject) {
             message = {
