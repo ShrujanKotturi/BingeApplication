@@ -38,7 +38,7 @@ router.get('/login', function (req, res) {
             console.log(message);
             return res.status(404).json(message);
         }
-        var result = supporter.toJSON();
+        var result = supporter.toPublicJSON();
         message = {
             'name': "Success",
             'message': "Supporter Login is Successful",

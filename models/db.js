@@ -136,7 +136,7 @@ module.exports = function (sequelize, DataTypes) {
             }
         },
         instanceMethods: {
-            toPublicJSON: function () {
+            toPublicJSON: function() {
                 var json = this.toJSON();
                 return _.pick(json, 'supporterId', 'contactNumber', 'isAdmin');
             }

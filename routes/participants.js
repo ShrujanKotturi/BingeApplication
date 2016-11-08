@@ -15,8 +15,8 @@ var message = {},
     session = {};
 
 router.get('/login', function (req, res) {
-    var query = _.pick(req.query, 'userId', 'password');
-    if (typeof query.userId !== 'string' || typeof query.password !== 'string') {
+    var query = _.pick(req.query, 'userId', 'password', 'deviceId');
+    if (typeof query.userId !== 'string' || typeof query.password !== 'string' || typeof query.deviceId !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -37,12 +37,31 @@ router.get('/login', function (req, res) {
             console.log(message);
             return res.status(404).json(message);
         }
-        var result = user.toJSON();
+        var result = user.toPublicJSON();
         message = {
             'name': "Success",
             'message': "Participant Login is Successful",
             'result': util.inspect(result)
         };
+
+        //start of userId update with userDeviceMapper
+
+        // db.app.userDeviceMapper.find({
+        //     where: {'deviceId': query.deviceId}
+        // }).on('success', function (userDevice) {
+        //     // Check if record exists in db
+        //     if (userDevice) {
+        //         userDevice.update({
+        //             userUserId: query.userId
+        //         }).then(function () {
+        //             message.device = 'Device mapped to the successfully';
+        //         }).catch(function (err) {
+        //             message.device = err;
+        //         });
+        //     }
+        // });
+
+        //end of userId update with userDeviceMapper
 
         var stringData = JSON.stringify(result);
         var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!@#').toString();
@@ -66,6 +85,44 @@ router.get('/login', function (req, res) {
             'message': error
         };
         console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.post('/registerDevice', function (req, res) {
+    var body = _.pick(req.body, 'deviceId', 'fcmToken');
+    if (typeof body.deviceId !== 'string' || typeof body.fcmToken !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+    db.app.userDeviceMapper.build({
+        userUserId: body.userId || req.session.userId,
+        deviceId: body.deviceId,
+        fcmToken: body.fcmToken
+    }).save()
+        .then(function (savedObject) {
+            if (!savedObject) {
+                message = {
+                    'name': "Failure",
+                    'message': 'Error in registering the device'
+                }
+                return res.status(404).json(message);
+            }
+            message = {
+                'name': "Success",
+                'message': "Device registered with Women Health Project",
+                'result': util.inspect(savedObject)
+            };
+            return res.json(message);
+        }).catch(function (error) {
+        console.log(error);
+        message = {
+            'name': error.name,
+            'message': error.errors[0].message
+        };
         return res.status(400).json(message);
     });
 });
@@ -111,8 +168,8 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
 });
 
 router.post('/quickLog', userAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit');
-    if (typeof body.userId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string') {
+    var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'returnType');
+    if (typeof body.userId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.returnType !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'

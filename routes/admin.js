@@ -15,8 +15,8 @@ var message = {},
     session = {};
 
 router.get('/login', function (req, res) {
-    var query = _.pick(req.query, 'supporterId', 'password');
-    if (typeof query.supporterId !== 'string' || typeof query.password !== 'string') {
+    var query = _.pick(req.query, 'adminId', 'password');
+    if (typeof query.adminId !== 'string' || typeof query.password !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -26,7 +26,7 @@ router.get('/login', function (req, res) {
     }
     db.app.researchers.findOne({
         where: {
-            supporterId: req.query.supporterId,
+            supporterId: query.adminId,
             isAdmin: true
         }
     }).then(function (admin) {
@@ -38,12 +38,17 @@ router.get('/login', function (req, res) {
             console.log(message);
             return res.status(404).json(message);
         }
-        var result = admin.toJSON();
+
+        console.log(1);
+        var result = admin.toPublicJSON();
+
+        console.log(2);
         message = {
             'name': "Success",
             'message': "Admin Login is Successful",
             'result': util.inspect(result)
         };
+        console.log('result = ' + result);
 
         var stringData = JSON.stringify(result);
         var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!@#').toString();
@@ -92,7 +97,7 @@ router.post('/createUser', adminAuthenticate, function (req, res) {
             message = {
                 'name': "Success",
                 'message': "User created successfully",
-                'result': savedObject.toJSON()
+                'result': savedObject.toPublicJSON()
             };
             console.log(message);
             return res.json(message);
@@ -127,7 +132,7 @@ router.post('/createSupporter', adminAuthenticate, function (req, res) {
             message = {
                 'name': "Success",
                 'message': "Supporter created successfully",
-                'result': savedObject.toJSON()
+                'result': savedObject.toPublicJSON()
             };
             console.log(message);
             return res.json(message);
@@ -142,5 +147,55 @@ router.post('/createSupporter', adminAuthenticate, function (req, res) {
 });
 
 //assign supporter to participant
+router.get('/getAllSupporters', adminAuthenticate, function (req, res) {
+
+    db.app.researchers.findOne({
+        where: {
+            supporterId: req.query.supporterId,
+            isAdmin: true
+        }
+    }).then(function (admin) {
+        if (!admin.dataValues || !bcrypt.compareSync(query.password, admin.get('passwordHash'))) {
+            message = {
+                'name': "Failure",
+                'message': 'Id & Password match not found'
+            };
+            console.log(message);
+            return res.status(404).json(message);
+        }
+        var result = admin.dataValues.toPublicJSON();
+        message = {
+            'name': "Success",
+            'message': "Admin Login is Successful",
+            'result': util.inspect(result)
+        };
+
+        console.log('result = ' + result);
+        var stringData = JSON.stringify(result);
+        var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!@#').toString();
+        var token = jwt.sign({
+            token: encryptedData
+        }, 'qwerty098');
+        if (token) {
+            session = req.session;
+            session.adminId = admin.dataValues.supporterId;
+            console.log(message);
+            console.log(req.session);
+            message.token = token;
+            return res.header('x-auth', token).json(message);
+        }
+        else
+            return res.status(400).send();
+
+
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
 
 module.exports = router;
