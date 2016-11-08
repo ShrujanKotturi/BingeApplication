@@ -78,9 +78,9 @@ router.get('/login', function (req, res) {
 });
 
 router.post('/createUser', adminAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'userId', 'password', 'age', 'supporterId');
+    var body = _.pick(req.body, 'userId', 'password', 'age', 'supporterId', 'logNotification', 'appNotification', 'quickLog', 'motivationalMessages');
     console.log(body);
-    if (typeof body.userId !== 'string' || typeof body.password !== 'string' || typeof body.age !== 'string'|| typeof body.supporterId !== 'string') {
+    if (typeof body.userId !== 'string' || typeof body.password !== 'string' || typeof body.age !== 'string' || typeof body.supporterId !== 'string'|| typeof body.logNotification !== 'string'|| typeof body.appNotification !== 'string'|| typeof body.quickLog !== 'string'|| typeof body.motivationalMessages !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -92,7 +92,11 @@ router.post('/createUser', adminAuthenticate, function (req, res) {
         userId: body.userId,
         password: body.password,
         age: body.age,
-        researcherSupporterId : body.supporterId
+        researcherSupporterId: body.supporterId,
+        logNotification: body.logNotification,
+        appNotification: body.appNotification,
+        quickLog: body.quickLog,
+        sendMotivationalMessages: body.motivationalMessages
     }).save()
         .then(function (savedObject) {
             message = {
@@ -147,48 +151,33 @@ router.post('/createSupporter', adminAuthenticate, function (req, res) {
     });
 });
 
-//assign supporter to participant
 router.get('/getAllSupporters', adminAuthenticate, function (req, res) {
 
-    db.app.researchers.findOne({
+    db.app.researchers.findAll({
+        attributes: [['supporterId', 'Supporter Id'], ['contactNumber', 'Contact Number'], ['createdAt', 'Created Date']],
         where: {
-            supporterId: req.query.supporterId,
-            isAdmin: true
+            isAdmin: false
         }
-    }).then(function (admin) {
-        if (!admin.dataValues || !bcrypt.compareSync(query.password, admin.get('passwordHash'))) {
-            message = {
-                'name': "Failure",
-                'message': 'Id & Password match not found'
-            };
-            console.log(message);
-            return res.status(404).json(message);
-        }
-        var result = admin.dataValues.toPublicJSON();
+    }).then(function (supporters) {
+        res.json(supporters);
+    }).catch(function (error) {
         message = {
-            'name': "Success",
-            'message': "Admin Login is Successful",
-            'result': util.inspect(result)
+            'name': error.name,
+            'message': util.inspect(error)
         };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
 
-        console.log('result = ' + result);
-        var stringData = JSON.stringify(result);
-        var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!@#').toString();
-        var token = jwt.sign({
-            token: encryptedData
-        }, 'qwerty098');
-        if (token) {
-            session = req.session;
-            session.adminId = admin.dataValues.supporterId;
-            console.log(message);
-            console.log(req.session);
-            message.token = token;
-            return res.header('x-auth', token).json(message);
+router.get('/getAllParticipants', adminAuthenticate, function (req, res) {
+    db.app.users.findAll({
+        attributes: [['userId', 'User Name'], ['researcherSupporterId', 'Supporter Id'], ['age', 'Age'], ['createdAt', 'Created Date']],
+        where: {
+            isActive: true
         }
-        else
-            return res.status(400).send();
-
-
+    }).then(function (supporters) {
+        res.json(supporters);
     }).catch(function (error) {
         message = {
             'name': error.name,
