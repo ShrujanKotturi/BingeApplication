@@ -2,7 +2,7 @@
  * Created by shruj on 11/01/2016.
  */
 var Sequelize = require('sequelize');
-var env = 'development';
+var env = process.env.NODE_ENV || 'development';
 var sequelize;
 
 if (env === 'production') {

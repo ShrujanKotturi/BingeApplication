@@ -22,6 +22,7 @@ module.exports = function (req, res, next) {
             'message': 'User not authorized for this request'
         };
         console.log(message);
+        //res.redirect
         res.status(401).send(message);
     }
 };

@@ -57,7 +57,7 @@ router.get('/login', function (req, res) {
                 message.device = err;
             });
         }).catch(function (error) {
-           console.error('Error in updating the user device');
+            console.error('Error in updating the user device');
         });
 
         //end of userId update with userDeviceMapper
@@ -89,8 +89,8 @@ router.get('/login', function (req, res) {
 });
 
 router.post('/registerDevice', function (req, res) {
-    var body = _.pick(req.body, 'deviceId', 'fcmToken');
-    if (typeof body.deviceId !== 'string' || typeof body.fcmToken !== 'string') {
+    var body = _.pick(req.body, 'deviceId', 'fcmToken', 'registeredTime');
+    if (typeof body.deviceId !== 'string' || typeof body.fcmToken !== 'string' || typeof body.registeredTime !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -98,7 +98,7 @@ router.post('/registerDevice', function (req, res) {
         return res.status(400).send(message);
     }
     db.app.userDeviceMapper.build({
-        userUserId: body.userId || req.session.userId,
+        registeredTime: body.registeredTime,
         deviceId: body.deviceId,
         fcmToken: body.fcmToken
     }).save()
@@ -128,6 +128,8 @@ router.post('/registerDevice', function (req, res) {
 
 router.post('/foodLog', userAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
+    body.logDateTime = new Date(body.logDateTime).toISOString();
+    console.log(typeof body.logDateTime);
     if (typeof body.userId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
@@ -136,12 +138,12 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
         return res.status(400).send(message);
     }
 
+    console.log(body.logDateTime);
+
     db.app.dailyFoodLog.findOrCreate({
         where: {
             userUserId: body.userId || req.session.userId,
             foodConsumedLog: body.food,
-            latitude: body.latitude,
-            longitude: body.longitude,
             feelingBinge: body.binge,
             feelingVomiting: body.vomit,
             dateTimeLogged: body.logDateTime
@@ -314,7 +316,6 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
         return res.status(400).json(message);
     });
 });
-
 
 
 module.exports = router;
