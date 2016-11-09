@@ -70,6 +70,119 @@ router.get('/login', function (req, res) {
     });
 });
 
+router.get('/getAllUsers', supporterAuthenticate, function (req, res) {
+    var query = _.pick(req.query, 'supporterId');
+    if (typeof query.supporterId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.users.findAll({
+        attributes: [['userId', 'User Name'], ['researcherSupporterId', 'Supporter Id'], ['age', 'Age'], ['createdAt', 'Created Date']],
+        where: {
+            researcherSupporterId: query.supporterId,
+            isActive: true
+        }
+    }).then(function (supporters) {
+        res.json(supporters);
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.get('/getUserFoodLog', supporterAuthenticate, function (req, res) {
+    var query = _.pick(req.query, 'userId');
+    if (typeof query.userId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.dailyFoodLog.findAll({
+        attributes: [['dailyFoodLogId', 'Daily Food Log Id'], ['foodConsumedLog', 'Food Consumed'], ['foodConsumedURL', 'Image'], 'latitude', 'longitude', ['dateTimeLogged', 'Logged Time'], ['feelingBinge', 'Feeling Binge'], ['feelingVomiting', 'Feeling Vomiting'], ['returnType', 'Image Type']],
+        where: {
+            userUserId: query.userId
+        }
+    }).then(function (supporters) {
+        res.json(supporters);
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.get('/getUserWeeklyLog', supporterAuthenticate, function (req, res) {
+    var query = _.pick(req.query, 'userId');
+    if (typeof query.userId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.weeklyLog.findAll({
+        attributes: [['weeklyLogId', 'Weekly Log Id'], ['WeekId', 'Week Id'], ['binges', 'Number of Binges'], ['goodDays', 'No. of good days'], ['weight', 'Weight'], ['V', 'V'], ['L', 'L'], ['D', 'D'], ['events', 'Events'], ['dateAdded', 'Date Logged for']],
+        where: {
+            userUserId: query.userId
+        }
+    }).then(function (supporters) {
+        res.json(supporters);
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.get('/getUserPhysicalLog', supporterAuthenticate, function (req, res) {
+    var query = _.pick(req.query, 'userId');
+    if (typeof query.userId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.dailyPhysicalLog.findAll({
+        attributes: [['dailyPhysicalLogId', 'Daily Physical Log Id'], ['physicalActivityPerformed', 'Physical Activity Logged'], ['duration', 'Duration'], ['dateTimeLogged', 'Logged Time'], ['feelingTired', 'Feeling Tired']],
+        where: {
+            userUserId: query.userId
+        }
+    }).then(function (supporters) {
+        res.json(supporters);
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
 // router.post('/createUser', function(req, res) {
 //
 //     var body = _.pick(req.body, 'userId', 'password', 'age');
