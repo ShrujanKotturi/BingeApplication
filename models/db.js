@@ -407,8 +407,7 @@ module.exports = function (sequelize, DataTypes) {
         },
         registeredTime: {
             type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: sequelize.fn('NOW')
+            allowNull: false
         },
         fcmToken: {
             type: DataTypes.STRING,
