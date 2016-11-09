@@ -301,4 +301,20 @@ router.get('/getUserPhysicalLog', adminAuthenticate, function (req, res) {
     });
 });
 
+router.post('/logout', function (req, res) {
+    var body = _.pick(req.body, 'adminId');
+    if (typeof body.adminId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    req.session.destroy();
+    //res.redirect()
+    res.send();
+});
+
 module.exports = router;

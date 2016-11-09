@@ -46,20 +46,19 @@ router.get('/login', function (req, res) {
 
         //start of userId update with userDeviceMapper
 
-        // db.app.userDeviceMapper.find({
-        //     where: {'deviceId': query.deviceId}
-        // }).on('success', function (userDevice) {
-        //     // Check if record exists in db
-        //     if (userDevice) {
-        //         userDevice.update({
-        //             userUserId: query.userId
-        //         }).then(function () {
-        //             message.device = 'Device mapped to the successfully';
-        //         }).catch(function (err) {
-        //             message.device = err;
-        //         });
-        //     }
-        // });
+        db.app.userDeviceMapper.find({
+            where: {'deviceId': query.deviceId}
+        }).then(function (userDevice) {
+            userDevice.update({
+                userUserId: query.userId
+            }).then(function () {
+                message.device = 'Device mapped to the successfully';
+            }).catch(function (err) {
+                message.device = err;
+            });
+        }).catch(function (error) {
+           console.error('Error in updating the user device');
+        });
 
         //end of userId update with userDeviceMapper
 
@@ -136,36 +135,52 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
         };
         return res.status(400).send(message);
     }
-    db.app.dailyFoodLog.build({
-        userUserId: body.userId || req.session.userId,
-        foodConsumedLog: body.food,
-        latitude: body.latitude,
-        longitude: body.longitude,
-        feelingBinge: body.binge,
-        feelingVomiting: body.vomit,
-        dateTimeLogged: body.logDateTime
-    }).save()
-        .then(function (savedObject) {
-            if (!savedObject) {
-                message = {
-                    'name': "Failure",
-                    'message': 'Error in creating food log'
-                }
-                return res.status(404).json(message);
-            }
-            message = {
-                'name': "Success",
-                'message': "Food log created successfully"
-            };
-            return res.json(message);
-        }).catch(function (error) {
-        console.log(error);
-        message = {
-            'name': error.name,
-            'message': error.errors[0].message
-        };
-        return res.status(400).json(message);
+
+    db.app.dailyFoodLog.findOrCreate({
+        where: {
+            userUserId: body.userId || req.session.userId,
+            foodConsumedLog: body.food,
+            latitude: body.latitude,
+            longitude: body.longitude,
+            feelingBinge: body.binge,
+            feelingVomiting: body.vomit,
+            dateTimeLogged: body.logDateTime
+        }
+    }).spread(function (foodLog, created) {
+        console.log(foodLog.values);
+        console.log(created.values);
     });
+
+    // db.app.dailyFoodLog.build({
+    //     userUserId: body.userId || req.session.userId,
+    //     foodConsumedLog: body.food,
+    //     latitude: body.latitude,
+    //     longitude: body.longitude,
+    //     feelingBinge: body.binge,
+    //     feelingVomiting: body.vomit,
+    //     dateTimeLogged: body.logDateTime
+    // }).save()
+    //     .then(function (savedObject) {
+    //         if (!savedObject) {
+    //             message = {
+    //                 'name': "Failure",
+    //                 'message': 'Error in creating food log'
+    //             }
+    //             return res.status(404).json(message);
+    //         }
+    //         message = {
+    //             'name': "Success",
+    //             'message': "Food log created successfully"
+    //         };
+    //         return res.json(message);
+    //     }).catch(function (error) {
+    //     console.log(error);
+    //     message = {
+    //         'name': error.name,
+    //         'message': error.errors[0].message
+    //     };
+    //     return res.status(400).json(message);
+    // });
 });
 
 router.post('/quickLog', userAuthenticate, function (req, res) {
@@ -299,6 +314,7 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
         return res.status(400).json(message);
     });
 });
+
 
 
 module.exports = router;

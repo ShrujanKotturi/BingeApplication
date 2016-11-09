@@ -183,6 +183,22 @@ router.get('/getUserPhysicalLog', supporterAuthenticate, function (req, res) {
     });
 });
 
+router.post('/logout', function (req, res) {
+    var body = _.pick(req.body, 'supporterId');
+    if (typeof body.supporterId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    req.session.destroy();
+    //res.redirect()
+    res.send();
+});
+
 // router.post('/createUser', function(req, res) {
 //
 //     var body = _.pick(req.body, 'userId', 'password', 'age');
