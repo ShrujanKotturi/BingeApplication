@@ -12,7 +12,7 @@ if (env === 'production') {
         storage: __dirname + '/data/bingeapplication.sql'
     });
 } else {
-    sequelize = new Sequelize('BingeApplication', 'root', '', {
+    sequelize = new Sequelize('BingeApplication', 'root', 'password', {
         host: 'localhost',
         dialect: 'mysql',
         storage: __dirname + '/data/bingeapplication.sql'
