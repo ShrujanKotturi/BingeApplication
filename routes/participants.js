@@ -107,7 +107,7 @@ router.post('/registerDevice', function (req, res) {
                 message = {
                     'name': "Failure",
                     'message': 'Error in registering the device'
-                }
+                };
                 return res.status(404).json(message);
             }
             message = {
@@ -135,7 +135,7 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
             'name': 'Error',
             'message': 'Problem with query parameters'
         };
-        return res.status(400).send(message);
+        return res.status(403).send(message);
     }
 
     console.log(body.logDateTime);
@@ -148,7 +148,7 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
             feelingVomiting: body.vomit,
             dateTimeLogged: body.logDateTime
         },
-        defaults:{
+        defaults: {
             userUserId: body.userId || req.session.userId,
             foodConsumedLog: body.food,
             latitude: body.latitude,
@@ -158,8 +158,18 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
             dateTimeLogged: body.logDateTime
         }
     }).spread(function (foodLog, created) {
-        console.log(foodLog);
-        console.log(created);
+        if (!created) {
+            message = {
+                'name': 'Failure',
+                'message': 'Food Log with the given details exists'
+            };
+            return res.json(message);
+        }
+        message = {
+            'name': 'Success',
+            'message': 'Food Log created'
+        };
+        return res.json(message);
     });
 
     // db.app.dailyFoodLog.build({
@@ -240,6 +250,8 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
 router.post('/physicalLog', userAuthenticate, function (req, res) {
 
     var body = _.pick(req.body, 'userId', 'physicalActivityPerformed', 'duration', 'feelingTired', 'logDateTime');
+    body.logDateTime = new Date(body.logDateTime).toISOString();
+
     if (typeof body.userId !== 'string' || typeof body.physicalActivityPerformed !== 'string' || typeof body.duration !== 'string' || typeof body.feelingTired !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
@@ -248,40 +260,71 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
         return res.status(400).send(message);
     }
 
-    db.app.dailyPhysicalLog.build({
-        userUserId: body.userId || req.session.userId,
-        physicalActivityPerformed: body.physicalActivityPerformed,
-        duration: body.duration,
-        feelingTired: body.feelingTired,
-        dateTimeLogged: body.logDateTime
-    }).save()
-        .then(function (savedObject) {
-            if (!savedObject) {
-                message = {
-                    'name': "Failure",
-                    'message': 'Error in creating physical log'
-                };
-                return res.status(404).json(message);
-
-            }
+    db.app.dailyPhysicalLog.findOrCreate({
+        where: {
+            userUserId: body.userId || req.session.userId,
+            physicalActivityPerformed: body.physicalActivityPerformed,
+            duration: body.duration,
+            feelingTired: body.feelingTired,
+            dateTimeLogged: body.logDateTime
+        },
+        defaults: {
+            userUserId: body.userId || req.session.userId,
+            physicalActivityPerformed: body.physicalActivityPerformed,
+            duration: body.duration,
+            feelingTired: body.feelingTired,
+            dateTimeLogged: body.logDateTime
+        }
+    }).spread(function (foodLog, created) {
+        if (!created) {
             message = {
-                'name': "Success",
-                'message': "Weekly log created successfully"
+                'name': 'Failure',
+                'message': 'Physical Log with the given details exists'
             };
-            return res.json(message);
-        }).catch(function (error) {
-        console.log(error);
+            return res.status(401).json(message);
+        }
         message = {
-            'name': error.name,
-            'message': error.errors[0].message
+            'name': 'Success',
+            'message': 'Physical Log created'
         };
-        return res.status(400).json(message);
+        return res.json(message);
     });
+
+    // db.app.dailyPhysicalLog.build({
+    //     userUserId: body.userId || req.session.userId,
+    //     physicalActivityPerformed: body.physicalActivityPerformed,
+    //     duration: body.duration,
+    //     feelingTired: body.feelingTired,
+    //     dateTimeLogged: body.logDateTime
+    // }).save()
+    //     .then(function (savedObject) {
+    //         if (!savedObject) {
+    //             message = {
+    //                 'name': "Failure",
+    //                 'message': 'Error in creating physical log'
+    //             };
+    //             return res.status(403).json(message);
+    //
+    //         }
+    //         message = {
+    //             'name': "Success",
+    //             'message': "Weekly log created successfully"
+    //         };
+    //         return res.json(message);
+    //     }).catch(function (error) {
+    //     console.log(error);
+    //     message = {
+    //         'name': error.name,
+    //         'message': error.errors[0].message
+    //     };
+    //     return res.status(400).json(message);
+    // });
 });
 
 router.post('/weeklyLog', userAuthenticate, function (req, res) {
-
     var body = _.pick(req.body, 'userId', 'weekId', 'binges', 'goodDays', 'V', 'L', 'D', 'events', 'weight', 'logDateTime');
+    body.logDateTime = new Date(body.logDateTime).toISOString();
+
     if (typeof body.userId !== 'string' || typeof body.weekId !== 'string' || typeof body.binges !== 'string' || typeof body.goodDays !== 'string' || typeof body.V !== 'string' || typeof body.L !== 'string' || typeof body.D !== 'string' || typeof body.events !== 'string' || typeof body.weight !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
@@ -290,41 +333,80 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
         return res.status(400).send(message);
     }
 
-    db.app.weeklyLog.build({
-        userUserId: body.userId || req.session.userId,
-        weekId: body.weekId,
-        binges: body.binges,
-        goodDays: body.goodDays,
-        V: body.V,
-        L: body.L,
-        D: body.D,
-        events: body.events,
-        weight: body.weight,
-        dateAdded: body.logDateTime
-    }).save()
-        .then(function (savedObject) {
-            if (!savedObject) {
-                message = {
-                    'name': "Failure",
-                    'message': 'Error in creating weekly log'
-                };
-                return res.status(404).json(message);
-
-            }
+    db.app.weeklyLog.findOrCreate({
+        where: {
+            userUserId: body.userId || req.session.userId,
+            weekId: body.weekId,
+            binges: body.binges,
+            goodDays: body.goodDays,
+            V: body.V,
+            L: body.L,
+            D: body.D,
+            events: body.events,
+            weight: body.weight,
+            dateAdded: body.logDateTime
+        },
+        defaults: {
+            userUserId: body.userId || req.session.userId,
+            weekId: body.weekId,
+            binges: body.binges,
+            goodDays: body.goodDays,
+            V: body.V,
+            L: body.L,
+            D: body.D,
+            events: body.events,
+            weight: body.weight,
+            dateAdded: body.logDateTime
+        }
+    }).spread(function (foodLog, created) {
+        if (!created) {
             message = {
-                'name': "Success",
-                'message': "Weekly log created successfully"
+                'name': 'Failure',
+                'message': 'Weekly Log with the given details exists'
             };
-            return res.json(message);
-        }).catch(function (error) {
-        console.log(error);
+            return res.status(401).json(message);
+        }
         message = {
-            'name': error.name,
-            'message': error.errors[0].message
+            'name': 'Success',
+            'message': 'Weekly Log created'
         };
-        return res.status(400).json(message);
+        return res.json(message);
     });
-});
 
+    // db.app.weeklyLog.build({
+    //     userUserId: body.userId || req.session.userId,
+    //     weekId: body.weekId,
+    //     binges: body.binges,
+    //     goodDays: body.goodDays,
+    //     V: body.V,
+    //     L: body.L,
+    //     D: body.D,
+    //     events: body.events,
+    //     weight: body.weight,
+    //     dateAdded: body.logDateTime
+    // }).save()
+    //     .then(function (savedObject) {
+    //         if (!savedObject) {
+    //             message = {
+    //                 'name': "Failure",
+    //                 'message': 'Error in creating weekly log'
+    //             };
+    //             return res.status(404).json(message);
+    //
+    //         }
+    //         message = {
+    //             'name': "Success",
+    //             'message': "Weekly log created successfully"
+    //         };
+    //         return res.json(message);
+    //     }).catch(function (error) {
+    //     console.log(error);
+    //     message = {
+    //         'name': error.name,
+    //         'message': error.errors[0].message
+    //     };
+    //     return res.status(400).json(message);
+    // });
+});
 
 module.exports = router;
