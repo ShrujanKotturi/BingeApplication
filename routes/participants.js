@@ -129,7 +129,7 @@ router.post('/registerDevice', function (req, res) {
 router.post('/foodLog', userAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
     body.logDateTime = new Date(body.logDateTime).toISOString();
-    console.log(typeof body.logDateTime);
+
     if (typeof body.userId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
@@ -147,10 +147,19 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
             feelingBinge: body.binge,
             feelingVomiting: body.vomit,
             dateTimeLogged: body.logDateTime
+        },
+        defaults:{
+            userUserId: body.userId || req.session.userId,
+            foodConsumedLog: body.food,
+            latitude: body.latitude,
+            longitude: body.longitude,
+            feelingBinge: body.binge,
+            feelingVomiting: body.vomit,
+            dateTimeLogged: body.logDateTime
         }
     }).spread(function (foodLog, created) {
-        console.log(foodLog.values);
-        console.log(created.values);
+        console.log(foodLog);
+        console.log(created);
     });
 
     // db.app.dailyFoodLog.build({
