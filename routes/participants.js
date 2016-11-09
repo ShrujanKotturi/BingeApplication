@@ -128,8 +128,8 @@ router.post('/registerDevice', function (req, res) {
 });
 
 router.post('/foodLog', userAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit');
-    if (typeof body.userId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string') {
+    var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
+    if (typeof body.userId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -142,7 +142,8 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
         latitude: body.latitude,
         longitude: body.longitude,
         feelingBinge: body.binge,
-        feelingVomiting: body.vomit
+        feelingVomiting: body.vomit,
+        dateTimeLogged: body.logDateTime
     }).save()
         .then(function (savedObject) {
             if (!savedObject) {
@@ -168,8 +169,8 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
 });
 
 router.post('/quickLog', userAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'returnType');
-    if (typeof body.userId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.returnType !== 'string') {
+    var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'returnType', 'logDateTime');
+    if (typeof body.userId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.returnType !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -183,7 +184,8 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
         latitude: req.body.latitude,
         longitude: req.body.longitude,
         feelingBinge: req.body.binge,
-        feelingVomiting: req.body.vomit
+        feelingVomiting: req.body.vomit,
+        dateTimeLogged: body.logDateTime
     }).save()
         .then(function (savedObject) {
             if (!savedObject) {
@@ -211,8 +213,8 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
 
 router.post('/physicalLog', userAuthenticate, function (req, res) {
 
-    var body = _.pick(req.body, 'userId', 'physicalActivityPerformed', 'duration', 'feelingTired');
-    if (typeof body.userId !== 'string' || typeof body.physicalActivityPerformed !== 'string' || typeof body.duration !== 'string' || typeof body.feelingTired !== 'string') {
+    var body = _.pick(req.body, 'userId', 'physicalActivityPerformed', 'duration', 'feelingTired', 'logDateTime');
+    if (typeof body.userId !== 'string' || typeof body.physicalActivityPerformed !== 'string' || typeof body.duration !== 'string' || typeof body.feelingTired !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -224,7 +226,8 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
         userUserId: body.userId || req.session.userId,
         physicalActivityPerformed: body.physicalActivityPerformed,
         duration: body.duration,
-        feelingTired: body.feelingTired
+        feelingTired: body.feelingTired,
+        dateTimeLogged: body.logDateTime
     }).save()
         .then(function (savedObject) {
             if (!savedObject) {
@@ -252,8 +255,8 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
 
 router.post('/weeklyLog', userAuthenticate, function (req, res) {
 
-    var body = _.pick(req.body, 'userId', 'weekId', 'binges', 'goodDays', 'V', 'L', 'D', 'events', 'weight');
-    if (typeof body.userId !== 'string' || typeof body.weekId !== 'string' || typeof body.binges !== 'string' || typeof body.goodDays !== 'string' || typeof body.V !== 'string' || typeof body.L !== 'string' || typeof body.D !== 'string' || typeof body.events !== 'string' || typeof body.weight !== 'string') {
+    var body = _.pick(req.body, 'userId', 'weekId', 'binges', 'goodDays', 'V', 'L', 'D', 'events', 'weight', 'logDateTime');
+    if (typeof body.userId !== 'string' || typeof body.weekId !== 'string' || typeof body.binges !== 'string' || typeof body.goodDays !== 'string' || typeof body.V !== 'string' || typeof body.L !== 'string' || typeof body.D !== 'string' || typeof body.events !== 'string' || typeof body.weight !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -270,7 +273,8 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
         L: body.L,
         D: body.D,
         events: body.events,
-        weight: body.weight
+        weight: body.weight,
+        dateAdded: body.logDateTime
     }).save()
         .then(function (savedObject) {
             if (!savedObject) {

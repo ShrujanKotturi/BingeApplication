@@ -157,8 +157,7 @@ module.exports = function (sequelize, DataTypes) {
         },
         dateTimeLogged: {
             type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: sequelize.fn('NOW')
+            allowNull: false
         },
         foodConsumedLog: {
             type: DataTypes.STRING,
@@ -220,8 +219,7 @@ module.exports = function (sequelize, DataTypes) {
         },
         dateTimeLogged: {
             type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: sequelize.fn('NOW')
+            allowNull: false
         },
         physicalActivityPerformed: {
             type: DataTypes.STRING,
@@ -290,8 +288,7 @@ module.exports = function (sequelize, DataTypes) {
         },
         dateAdded: {
             type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: sequelize.fn('NOW')
+            allowNull: false
         }
     }, {
         timestamps: true,
@@ -325,8 +322,7 @@ module.exports = function (sequelize, DataTypes) {
         },
         createdOn: {
             type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: sequelize.fn('NOW')
+            allowNull: false
         }
     }, {
         timestamps: true,
@@ -382,8 +378,7 @@ module.exports = function (sequelize, DataTypes) {
         },
         dateTimeSent: {
             type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: sequelize.fn('NOW')
+            allowNull: false
         }
     }, {
         timestamps: true,
