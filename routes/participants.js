@@ -138,7 +138,7 @@ router.post('/registerDevice', function (req, res) {
 });
 
 router.get('/getDates', userAuthenticate, function (req, res) {
-    var sqlQuery = "SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyFoodLogs WHERE userUserId = '" + res.locals.userId + "' UNION SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyphysicallogs WHERE userUserId = '" + res.locals.userId + "'";
+    var sqlQuery = "SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyFoodLogs WHERE userUserId = '" + res.locals.userId + "' UNION SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyPhysicalLogs WHERE userUserId = '" + res.locals.userId + "'";
     console.log(sqlQuery);
     var resultsData = {};
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
