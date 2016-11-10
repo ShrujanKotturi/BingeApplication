@@ -43,7 +43,7 @@ router.get('/login', function (req, res) {
         message = {
             'name': "Success",
             'message': "Participant Login is Successful",
-            'result': util.inspect(result)
+            'result': result
         };
 
         //start of userId update with userDeviceMapper
@@ -424,7 +424,6 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
         };
         return res.json(message);
     });
-
 
 
     // db.app.dailyFoodLog.findOrCreate({
