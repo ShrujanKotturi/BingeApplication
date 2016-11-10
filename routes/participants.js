@@ -679,21 +679,12 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
 });
 
 router.get('/getWeeklyLog', userAuthenticate, function (req, res) {
-    var query = _.pick(req.query, 'date');
-    if (typeof query.date !== 'string') {
-        message = {
-            'name': 'Error',
-            'message': 'Problem with query parameters'
-        };
-        console.log(message);
-        return res.status(400).send(message);
-    }
 
     db.app.weeklyLog.findAll({
         attributes: [['weeklyLogId', 'Weekly Log Id'], ['WeekId', 'Week Id'], ['binges', 'Number of Binges'], ['goodDays', 'No. of good days'], ['weight', 'Weight'], ['V', 'V'], ['L', 'L'], ['D', 'D'], ['events', 'Events'], ['dateAdded', 'Date Logged for']],
         where: {
-            userUserId: res.locals.userId,
-            dateAdded: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateAdded')), '=', query.date)
+            userUserId: res.locals.userId
+            // dateAdded: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateAdded')), '=', query.date)
         }
     }).then(function (supporters) {
         res.json(supporters);
