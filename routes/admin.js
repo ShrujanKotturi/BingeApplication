@@ -11,8 +11,8 @@ var express = require('express'),
 
 var router = express.Router();
 var db = require('../db');
-var message = {},
-    session = {};
+var message = {};
+
 
 router.get('/login', function (req, res) {
     var query = _.pick(req.query, 'adminId', 'password');
@@ -47,6 +47,7 @@ router.get('/login', function (req, res) {
             'result': util.inspect(result)
         };
 
+        var session = {};
         var stringData = JSON.stringify(result);
         var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!@#').toString();
         var token = jwt.sign({
@@ -76,7 +77,7 @@ router.get('/login', function (req, res) {
 
 router.post('/createUser', adminAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'userId', 'password', 'age', 'supporterId', 'logNotification', 'appNotification', 'quickLog', 'motivationalMessages');
-    console.log(body);
+    console.log(req.session);
     if (typeof body.userId !== 'string' || typeof body.password !== 'string' || typeof body.age !== 'string' || typeof body.supporterId !== 'string' || typeof body.logNotification !== 'string' || typeof body.appNotification !== 'string' || typeof body.quickLog !== 'string' || typeof body.motivationalMessages !== 'string') {
         message = {
             'name': 'Error',
@@ -115,6 +116,7 @@ router.post('/createUser', adminAuthenticate, function (req, res) {
 
 router.post('/createSupporter', adminAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'supporterId', 'password', 'contactNumber');
+    console.log(req.session);
     if (typeof body.supporterId !== 'string' || typeof body.password !== 'string' || typeof body.contactNumber !== 'string') {
         message = {
             'name': 'Error',
@@ -189,6 +191,7 @@ router.get('/getAllParticipants', adminAuthenticate, function (req, res) {
 
 router.get('/getAllUsers', adminAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'supporterId');
+    console.log(req.session);
     if (typeof query.supporterId !== 'string') {
         message = {
             'name': 'Error',
@@ -217,6 +220,7 @@ router.get('/getAllUsers', adminAuthenticate, function (req, res) {
 });
 
 router.get('/getUserFoodLog', adminAuthenticate, function (req, res) {
+    console.log(req.session);
     var query = _.pick(req.query, 'userId');
     console.log(util.inspect(req.session));
     if (typeof query.userId !== 'string') {
@@ -247,6 +251,7 @@ router.get('/getUserFoodLog', adminAuthenticate, function (req, res) {
 
 router.get('/getUserWeeklyLog', adminAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'userId');
+    console.log(req.session);
     if (typeof query.userId !== 'string') {
         message = {
             'name': 'Error',
@@ -275,6 +280,7 @@ router.get('/getUserWeeklyLog', adminAuthenticate, function (req, res) {
 
 router.get('/getUserPhysicalLog', adminAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'userId');
+    console.log(req.session);
     if (typeof query.userId !== 'string') {
         message = {
             'name': 'Error',
@@ -303,6 +309,7 @@ router.get('/getUserPhysicalLog', adminAuthenticate, function (req, res) {
 
 router.post('/deleteUser', adminAuthenticate, function (req, res) {
 
+    console.log(req.session);
     var body = _.pick(req.body, 'userId');
 
     if (typeof body.userId !== 'string') {
@@ -344,7 +351,7 @@ router.post('/deleteUser', adminAuthenticate, function (req, res) {
 
 router.post('/logout', function (req, res) {
     var body = _.pick(req.body, 'adminId');
-
+    console.log(req.session);
     if (typeof body.adminId !== 'string') {
         message = {
             'name': 'Error',
@@ -355,6 +362,7 @@ router.post('/logout', function (req, res) {
     }
 
     req.session.destroy();
+    console.log(req.session);
     //res.redirect()
     res.send();
 });

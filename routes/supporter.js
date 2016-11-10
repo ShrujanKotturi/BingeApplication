@@ -14,8 +14,8 @@ fcmCli = new FCM(config.SERVER_API_KEY);
 
 var router = express.Router();
 var db = require('../db');
-var message = {},
-    session = {};
+var message = {};
+
 
 router.get('/login', function (req, res) {
     var query = _.pick(req.query, 'supporterId', 'password');
@@ -47,7 +47,7 @@ router.get('/login', function (req, res) {
             'message': "Supporter Login is Successful",
             'result': util.inspect(result)
         };
-
+        var session = {};
         var stringData = JSON.stringify(result);
         var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!@#').toString();
         var token = jwt.sign({
@@ -74,7 +74,7 @@ router.get('/login', function (req, res) {
 });
 
 router.get('/getAllUsers', supporterAuthenticate, function (req, res) {
-    console.log(util.inspect(req.session));
+    console.log(req.session);
     var query = _.pick(req.query, 'supporterId');
     if (typeof query.supporterId !== 'string') {
         message = {
@@ -105,7 +105,7 @@ router.get('/getAllUsers', supporterAuthenticate, function (req, res) {
 
 router.get('/getUserFoodLog', supporterAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'userId');
-    console.log(util.inspect(req.session));
+    console.log(req.session);
     if (typeof query.userId !== 'string') {
         message = {
             'name': 'Error',
@@ -134,6 +134,7 @@ router.get('/getUserFoodLog', supporterAuthenticate, function (req, res) {
 
 router.get('/getUserWeeklyLog', supporterAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'userId');
+    console.log(req.session);
     if (typeof query.userId !== 'string') {
         message = {
             'name': 'Error',
@@ -162,6 +163,7 @@ router.get('/getUserWeeklyLog', supporterAuthenticate, function (req, res) {
 
 router.get('/getUserPhysicalLog', supporterAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'userId');
+    console.log(req.session);
     if (typeof query.userId !== 'string') {
         message = {
             'name': 'Error',
@@ -190,6 +192,7 @@ router.get('/getUserPhysicalLog', supporterAuthenticate, function (req, res) {
 
 router.post('/logout', function (req, res) {
     var body = _.pick(req.body, 'supporterId');
+    console.log(req.session);
     if (typeof body.supporterId !== 'string') {
         message = {
             'name': 'Error',
@@ -201,6 +204,7 @@ router.post('/logout', function (req, res) {
 
     req.session.destroy();
     //res.redirect()
+    console.log(req.session);
     res.send();
 });
 
