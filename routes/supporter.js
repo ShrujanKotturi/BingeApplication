@@ -10,7 +10,7 @@ var express = require('express'),
     FCM = require('fcm-node'),
     supporterAuthenticate = require('../middleware/supporterAuthenticate'),
     config = require('../config.json');
-    fcmCli = new FCM(config.SERVER_API_KEY);
+fcmCli = new FCM(config.SERVER_API_KEY);
 
 var router = express.Router();
 var db = require('../db');
@@ -119,7 +119,7 @@ router.get('/getUserFoodLog', supporterAuthenticate, function (req, res) {
             userUserId: query.userId
         }
     }).then(function (supporters) {
-        res.json(supporters);
+        return res.json(supporters);
     }).catch(function (error) {
         message = {
             'name': error.name,
@@ -147,7 +147,7 @@ router.get('/getUserWeeklyLog', supporterAuthenticate, function (req, res) {
             userUserId: query.userId
         }
     }).then(function (supporters) {
-        res.json(supporters);
+        return res.json(supporters);
     }).catch(function (error) {
         message = {
             'name': error.name,

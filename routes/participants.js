@@ -90,22 +90,84 @@ router.get('/login', function (req, res) {
 });
 
 router.get('/getDates', userAuthenticate, function (req, res) {
-    var sqlQuery= "SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyfoodlogs WHERE userUserId = '" + res.locals.userId + "' UNION SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyphysicallogs WHERE userUserId = '" + res.locals.userId + "'";
+    var sqlQuery = "SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyfoodlogs WHERE userUserId = '" + res.locals.userId + "' UNION SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyphysicallogs WHERE userUserId = '" + res.locals.userId + "'";
     console.log(sqlQuery);
-    db.sequelize.query(sqlQuery).spread(function(results, metadata) {
+    db.sequelize.query(sqlQuery).spread(function (results, metadata) {
         console.log(util.inspect(metadata));
         return res.json(results);
     });
 });
 
 router.get('/getWeeklyLog', userAuthenticate, function (req, res) {
+    var query = _.pick(req.query, 'date');
+    if (typeof query.date !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
     db.app.weeklyLog.findAll({
         attributes: [['weeklyLogId', 'Weekly Log Id'], ['WeekId', 'Week Id'], ['binges', 'Number of Binges'], ['goodDays', 'No. of good days'], ['weight', 'Weight'], ['V', 'V'], ['L', 'L'], ['D', 'D'], ['events', 'Events'], ['dateAdded', 'Date Logged for']],
         where: {
-            userUserId: res.locals.userId
+            userUserId: res.locals.userId,
+            dateAdded: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateAdded')), '=', query.date)
         }
     }).then(function (supporters) {
         res.json(supporters);
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.get('/getFoodLog', userAuthenticate, function (req, res) {
+    var query = _.pick(req.query, 'date');
+    if (typeof query.date !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    var results = {};
+
+    db.app.dailyPhysicalLog.findAll({
+        attributes: [['dailyPhysicalLogId', 'Daily Physical Log Id'], ['physicalActivityPerformed', 'Physical Activity Logged'], ['duration', 'Duration'], ['dateTimeLogged', 'Logged Time'], ['feelingTired', 'Feeling Tired']],
+        where: {
+            userUserId: res.locals.userId,
+            dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
+        }
+    }).then(function (supporters) {
+        results.PhysicalLogs = supporters;
+
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+
+    db.app.dailyFoodLog.findAll({
+        attributes: [['dailyFoodLogId', 'Daily Food Log Id'], ['foodConsumedLog', 'Food Consumed'], ['foodConsumedURL', 'Image'], 'latitude', 'longitude', ['dateTimeLogged', 'Logged Time'], ['feelingBinge', 'Feeling Binge'], ['feelingVomiting', 'Feeling Vomiting'], ['returnType', 'Image Type']],
+        where: {
+            userUserId: res.locals.userId,
+            dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
+        }
+    }).then(function (supporters) {
+        results.Foodlogs = supporters;
+
+        return res.json(results);
     }).catch(function (error) {
         message = {
             'name': error.name,
