@@ -344,6 +344,7 @@ router.post('/deleteUser', adminAuthenticate, function (req, res) {
 
 router.post('/logout', function (req, res) {
     var body = _.pick(req.body, 'adminId');
+
     if (typeof body.adminId !== 'string') {
         message = {
             'name': 'Error',

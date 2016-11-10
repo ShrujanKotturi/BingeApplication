@@ -7,6 +7,8 @@ var express = require('express'),
     _ = require('underscore'),
     cryptojs = require('crypto-js'),
     jwt = require('jsonwebtoken'),
+    fs = require('fs'),
+    path = require('path'),
     userAuthenticate = require('../middleware/userAuthenticate');
 
 var router = express.Router();
@@ -49,13 +51,16 @@ router.get('/login', function (req, res) {
         db.app.userDeviceMapper.find({
             where: {'deviceId': query.deviceId}
         }).then(function (userDevice) {
-            userDevice.update({
-                userUserId: query.userId
-            }).then(function () {
-                message.device = 'Device mapped to the successfully';
-            }).catch(function (err) {
-                message.device = err;
-            });
+            if (userDevice) {
+                userDevice.update({
+                    userUserId: query.userId
+                }).then(function () {
+                    message.device = 'Device mapped to the successfully';
+                }).catch(function (err) {
+                    message.device = err;
+                });
+            } else
+                message.device = 'Couldn\'t find the Device, so didn\'t update the DeviceMapper';
         }).catch(function (error) {
             console.error('Error in updating the user device : ' + error);
         });
@@ -142,11 +147,14 @@ router.get('/getDates', userAuthenticate, function (req, res) {
 });
 
 
+//Food Log
 router.post('/foodLog', userAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
+    var body = _.pick(req.body, 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
     body.logDateTime = new Date(body.logDateTime).toISOString();
-
-    if (typeof body.userId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.logDateTime !== 'string') {
+    console.log(__dirname);
+    __dirname = __dirname.substring(0, __dirname.indexOf("\\routes")) + '\\images';
+    console.log(__dirname);
+    if (typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -158,14 +166,14 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
 
     db.app.dailyFoodLog.findOrCreate({
         where: {
-            userUserId: body.userId || req.session.userId,
+            userUserId: res.locals.userId || req.session.userId,
             foodConsumedLog: body.food,
             feelingBinge: body.binge,
             feelingVomiting: body.vomit,
             dateTimeLogged: body.logDateTime
         },
         defaults: {
-            userUserId: body.userId || req.session.userId,
+            userUserId: res.locals.userId || req.session.userId,
             foodConsumedLog: body.food,
             latitude: body.latitude,
             longitude: body.longitude,
@@ -349,9 +357,17 @@ router.post('/deleteFoodLog', userAuthenticate, function (req, res) {
 });
 
 
+//Quick Log
 router.post('/quickLog', userAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'returnType', 'logDateTime');
-    if (typeof body.userId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.returnType !== 'string' || typeof body.logDateTime !== 'string') {
+    var newPath = __dirname.substring(0, __dirname.indexOf("\\routes")) + '\\images';
+    var body = _.pick(req.body, 'food', 'latitude', 'longitude', 'binge', 'vomit', 'returnType', 'logDateTime');
+
+    body.imageFile = req.files.image;
+    body.returnType = path.extname(req.files.image.originalFilename).toLowerCase();
+    console.log("typeof the imagefile : " + typeof body.imageFile);
+    console.log("originalFilename : " + req.files.image.originalFilename);
+    console.log("originalFilePath : " + req.files.image.path);
+    if (typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.returnType !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -359,28 +375,38 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
         return res.status(400).send(message);
     }
 
+    fs.readFile(body.imageFile.path, function (err, data) {
+        newPath += req.files.image.originalFilename;
+        newPath += req.files.image.originalFilename;
+        fs.writeFile(newPath, data, function (err) {
+            if (err) {
+                message.image = 'Error in uploading the image';
+            } else {
+                message.image = 'Image uploaded successfully';
+            }
+        });
+    });
+
     db.app.dailyFoodLog.build({
-        userUserId: req.body.userId || req.session.userId,
-        foodConsumedURL: req.body.food,
+        userUserId: res.locals.userId || req.session.userId,
+        foodConsumedLog: req.body.food,
+        foodConsumedURL: newPath + returnType,
         latitude: req.body.latitude,
         longitude: req.body.longitude,
         feelingBinge: req.body.binge,
         feelingVomiting: req.body.vomit,
-        dateTimeLogged: body.logDateTime
+        dateTimeLogged: body.logDateTime,
+        returnType: body.returnType
     }).save()
         .then(function (savedObject) {
             if (!savedObject) {
-                message = {
-                    'name': "Failure",
-                    'message': 'Error in creating quick log'
-                }
+                message.name = "Failure";
+                message.message = 'Error in creating quick log';
                 return res.status(404).json(message);
             }
-            message = {
-                'name': "Success",
-                'message': "Quick log created successfully"
-            };
-            res.json(message);
+            message.name = "Success";
+            message.message = 'Quick log created successfully';
+            return res.json(message);
         }).catch(function (error) {
         console.log(error);
         message = {
@@ -393,12 +419,13 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
 });
 
 
+//Physical Log
 router.post('/physicalLog', userAuthenticate, function (req, res) {
 
-    var body = _.pick(req.body, 'userId', 'physicalActivityPerformed', 'duration', 'feelingTired', 'logDateTime');
+    var body = _.pick(req.body, 'physicalActivityPerformed', 'duration', 'feelingTired', 'logDateTime');
     body.logDateTime = new Date(body.logDateTime).toISOString();
 
-    if (typeof body.userId !== 'string' || typeof body.physicalActivityPerformed !== 'string' || typeof body.duration !== 'string' || typeof body.feelingTired !== 'string' || typeof body.logDateTime !== 'string') {
+    if (typeof body.physicalActivityPerformed !== 'string' || typeof body.duration !== 'string' || typeof body.feelingTired !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -408,14 +435,14 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
 
     db.app.dailyPhysicalLog.findOrCreate({
         where: {
-            userUserId: body.userId || req.session.userId,
+            userUserId: res.locals.userId || req.session.userId,
             physicalActivityPerformed: body.physicalActivityPerformed,
             duration: body.duration,
             feelingTired: body.feelingTired,
             dateTimeLogged: body.logDateTime
         },
         defaults: {
-            userUserId: body.userId || req.session.userId,
+            userUserId: res.locals.userId || req.session.userId,
             physicalActivityPerformed: body.physicalActivityPerformed,
             duration: body.duration,
             feelingTired: body.feelingTired,
@@ -515,11 +542,12 @@ router.post('/deletePhysicalLog', userAuthenticate, function (req, res) {
 });
 
 
+//Weekly Log
 router.post('/weeklyLog', userAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'userId', 'weekId', 'binges', 'goodDays', 'V', 'L', 'D', 'events', 'weight', 'logDateTime');
+    var body = _.pick(req.body, 'weekId', 'binges', 'goodDays', 'V', 'L', 'D', 'events', 'weight', 'logDateTime');
     body.logDateTime = new Date(body.logDateTime).toISOString();
 
-    if (typeof body.userId !== 'string' || typeof body.weekId !== 'string' || typeof body.binges !== 'string' || typeof body.goodDays !== 'string' || typeof body.V !== 'string' || typeof body.L !== 'string' || typeof body.D !== 'string' || typeof body.events !== 'string' || typeof body.weight !== 'string' || typeof body.logDateTime !== 'string') {
+    if (typeof body.weekId !== 'string' || typeof body.binges !== 'string' || typeof body.goodDays !== 'string' || typeof body.V !== 'string' || typeof body.L !== 'string' || typeof body.D !== 'string' || typeof body.events !== 'string' || typeof body.weight !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -529,7 +557,7 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
 
     db.app.weeklyLog.findOrCreate({
         where: {
-            userUserId: body.userId || req.session.userId,
+            userUserId: res.locals.userId || req.session.userId,
             weekId: body.weekId,
             binges: body.binges,
             goodDays: body.goodDays,
@@ -541,7 +569,7 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
             dateAdded: body.logDateTime
         },
         defaults: {
-            userUserId: body.userId || req.session.userId,
+            userUserId: res.locals.userId || req.session.userId,
             weekId: body.weekId,
             binges: body.binges,
             goodDays: body.goodDays,
@@ -567,40 +595,6 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
         return res.json(message);
     });
 
-    // db.app.weeklyLog.build({
-    //     userUserId: body.userId || req.session.userId,
-    //     weekId: body.weekId,
-    //     binges: body.binges,
-    //     goodDays: body.goodDays,
-    //     V: body.V,
-    //     L: body.L,
-    //     D: body.D,
-    //     events: body.events,
-    //     weight: body.weight,
-    //     dateAdded: body.logDateTime
-    // }).save()
-    //     .then(function (savedObject) {
-    //         if (!savedObject) {
-    //             message = {
-    //                 'name': "Failure",
-    //                 'message': 'Error in creating weekly log'
-    //             };
-    //             return res.status(404).json(message);
-    //
-    //         }
-    //         message = {
-    //             'name': "Success",
-    //             'message': "Weekly log created successfully"
-    //         };
-    //         return res.json(message);
-    //     }).catch(function (error) {
-    //     console.log(error);
-    //     message = {
-    //         'name': error.name,
-    //         'message': error.errors[0].message
-    //     };
-    //     return res.status(400).json(message);
-    // });
 });
 
 router.get('/getWeeklyLog', userAuthenticate, function (req, res) {
