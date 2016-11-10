@@ -7,7 +7,10 @@ var express = require('express'),
     _ = require('underscore'),
     cryptojs = require('crypto-js'),
     jwt = require('jsonwebtoken'),
-    supporterAuthenticate = require('../middleware/supporterAuthenticate');
+    FCM = require('fcm-node'),
+    supporterAuthenticate = require('../middleware/supporterAuthenticate'),
+    config = require('../config.json');
+    fcmCli = new FCM(config.SERVER_API_KEY);
 
 var router = express.Router();
 var db = require('../db');

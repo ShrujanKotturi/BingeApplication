@@ -97,26 +97,32 @@ router.post('/registerDevice', function (req, res) {
         };
         return res.status(400).send(message);
     }
-    db.app.userDeviceMapper.build({
+    db.app.userDeviceMapper.upsert({
         registeredTime: body.registeredTime,
         deviceId: body.deviceId,
         fcmToken: body.fcmToken
-    }).save()
-        .then(function (savedObject) {
-            if (!savedObject) {
-                message = {
-                    'name': "Failure",
-                    'message': 'Error in registering the device'
-                };
-                return res.status(404).json(message);
-            }
+    }, {
+        validate: true,
+        fields: {
+            registeredTime: body.registeredTime,
+            deviceId: body.deviceId,
+            fcmToken: body.fcmToken
+        }
+    }).then(function (savedObject) {
+        if (!savedObject) {
             message = {
-                'name': "Success",
-                'message': "Device registered with Women Health Project",
-                'result': util.inspect(savedObject)
+                'name': "Failure",
+                'message': 'Error in registering the device'
             };
-            return res.json(message);
-        }).catch(function (error) {
+            return res.status(404).json(message);
+        }
+        message = {
+            'name': "Success",
+            'message': "Device registered with Women Health Project",
+            'result': util.inspect(savedObject)
+        };
+        return res.json(message);
+    }).catch(function (error) {
         console.log(error);
         message = {
             'name': error.name,
