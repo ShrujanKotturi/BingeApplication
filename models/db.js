@@ -252,11 +252,8 @@ module.exports = function (sequelize, DataTypes) {
             primaryKey: true
         },
         weekId: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-            validate: {
-                isNumeric: true
-            }
+            type: DataTypes.STRING,
+            allowNull: false
         },
         binges: {
             type: DataTypes.INTEGER,

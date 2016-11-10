@@ -57,6 +57,7 @@ router.get('/login', function (req, res) {
                 message.device = err;
             });
         }).catch(function (error) {
+            console.error(error);
             console.error('Error in updating the user device');
         });
 
@@ -82,6 +83,33 @@ router.get('/login', function (req, res) {
         message = {
             'name': error.name,
             'message': error
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.get('/getDates', userAuthenticate, function (req, res) {
+    var sqlQuery= "SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyfoodlogs WHERE userUserId = '" + res.locals.userId + "' UNION SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyphysicallogs WHERE userUserId = '" + res.locals.userId + "'";
+    console.log(sqlQuery);
+    db.sequelize.query(sqlQuery).spread(function(results, metadata) {
+        console.log(util.inspect(metadata));
+        return res.json(results);
+    });
+});
+
+router.get('/getWeeklyLog', userAuthenticate, function (req, res) {
+    db.app.weeklyLog.findAll({
+        attributes: [['weeklyLogId', 'Weekly Log Id'], ['WeekId', 'Week Id'], ['binges', 'Number of Binges'], ['goodDays', 'No. of good days'], ['weight', 'Weight'], ['V', 'V'], ['L', 'L'], ['D', 'D'], ['events', 'Events'], ['dateAdded', 'Date Logged for']],
+        where: {
+            userUserId: res.locals.userId
+        }
+    }).then(function (supporters) {
+        res.json(supporters);
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
         };
         console.log(error);
         return res.status(400).json(message);
