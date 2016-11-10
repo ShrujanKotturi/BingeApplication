@@ -138,7 +138,7 @@ router.post('/registerDevice', function (req, res) {
 });
 
 router.get('/getDates', userAuthenticate, function (req, res) {
-    var sqlQuery = "SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyfoodlogs WHERE userUserId = '" + res.locals.userId + "' UNION SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyphysicallogs WHERE userUserId = '" + res.locals.userId + "'";
+    var sqlQuery = "SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyFoodLogs WHERE userUserId = '" + res.locals.userId + "' UNION SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyphysicallogs WHERE userUserId = '" + res.locals.userId + "'";
     console.log(sqlQuery);
     var resultsData = {};
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
@@ -380,7 +380,8 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
 
     fs.readFile(body.imageFile.path, function (err, data) {
         newPath += req.files.image.originalFilename;
-        newPath += req.files.image.originalFilename;
+        //newPath += req.files.image.originalFilename;
+        console.log(newPath);
         fs.writeFile(newPath, data, function (err) {
             if (err) {
                 message.image = 'Error in uploading the image';
@@ -390,37 +391,115 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
         });
     });
 
-    db.app.dailyFoodLog.build({
-        userUserId: res.locals.userId || req.session.userId,
-        foodConsumedLog: req.body.food,
-        foodConsumedURL: newPath + returnType,
-        latitude: req.body.latitude,
-        longitude: req.body.longitude,
-        feelingBinge: req.body.binge,
-        feelingVomiting: req.body.vomit,
-        dateTimeLogged: body.logDateTime,
-        returnType: body.returnType
-    }).save()
-        .then(function (savedObject) {
-            if (!savedObject) {
-                message.name = "Failure";
-                message.message = 'Error in creating quick log';
-                return res.status(404).json(message);
-            }
-            message.name = "Success";
-            message.message = 'Quick log created successfully';
-            return res.json(message);
-        }).catch(function (error) {
-        console.log(error);
+    db.app.dailyFoodLog.findOrCreate({
+        where: {
+            userUserId: res.locals.userId || req.session.userId,
+            foodConsumedLog: body.food,
+            feelingBinge: body.binge,
+            feelingVomiting: body.vomit,
+            dateTimeLogged: body.logDateTime
+        },
+        defaults: {
+            userUserId: res.locals.userId || req.session.userId,
+            foodConsumedLog: body.food,
+            foodConsumedURL: newPath + returnType,
+            latitude: body.latitude,
+            longitude: body.longitude,
+            feelingBinge: body.binge,
+            feelingVomiting: body.vomit,
+            dateTimeLogged: body.logDateTime,
+            returnType: body.returnType
+        }
+    }).spread(function (foodLog, created) {
+        if (!created) {
+            message = {
+                'name': 'Failure',
+                'message': 'Error in creating quick log'
+            };
+            return res.status(404).json(message);
+        }
         message = {
-            'name': error.name,
-            'message': error.errors[0].message
+            'name': 'Success',
+            'message': 'Quick log created successfully'
         };
-
-        return res.status(400).json(message);
+        return res.json(message);
     });
+
+
+
+    // db.app.dailyFoodLog.findOrCreate({
+    //     userUserId: res.locals.userId || req.session.userId,
+    //     foodConsumedLog: req.body.food,
+    //     foodConsumedURL: newPath + returnType,
+    //     latitude: req.body.latitude,
+    //     longitude: req.body.longitude,
+    //     feelingBinge: req.body.binge,
+    //     feelingVomiting: req.body.vomit,
+    //     dateTimeLogged: body.logDateTime,
+    //     returnType: body.returnType
+    // }).save()
+    //     .then(function (savedObject) {
+    //         if (!savedObject) {
+    //             message.name = "Failure";
+    //             message.message = 'Error in creating quick log';
+    //             return res.status(404).json(message);
+    //         }
+    //         message.name = "Success";
+    //         message.message = 'Quick log created successfully';
+    //         return res.json(message);
+    //     }).catch(function (error) {
+    //     console.log(error);
+    //     message = {
+    //         'name': error.name,
+    //         'message': error.errors[0].message
+    //     };
+    //
+    //     return res.status(400).json(message);
+    // });
 });
 
+router.post('/updateQuickLog', userAuthenticate, function (req, res) {
+    var body = _.pick(req.body, 'dailyFoodLogId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
+    body.logDateTime = new Date(body.logDateTime).toISOString();
+
+    if (typeof body.dailyFoodLogId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.logDateTime !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(403).send(message);
+    }
+
+    db.app.dailyFoodLog.find({
+        where: {
+            userUserId: res.locals.userId,
+            dailyFoodLogId: body.dailyFoodLogId
+        }
+    }).then(function (data) {
+        if (data) {
+            data.update({
+                foodConsumedLog: body.food,
+                latitude: body.latitude,
+                longitude: body.longitude,
+                feelingBinge: body.binge,
+                feelingVomiting: body.vomit,
+                dateTimeLogged: body.logDateTime
+            }).then(function (data1) {
+                console.log('data1: ' + data1);
+                message.name = 'Success';
+                message.message = 'Update to food log successful';
+                message.data = data1;
+                return res.json(message);
+            }).catch(function (error) {
+                console.error('Error in updating the user device : ' + error);
+                message.name = 'Failure';
+                message.message = 'Error in updating the food log';
+                message.error = util.inspect(error);
+                return res.status(404).send(message);
+            });
+        }
+    });
+});
 
 //Physical Log
 router.post('/physicalLog', userAuthenticate, function (req, res) {

@@ -39,16 +39,13 @@ router.get('/login', function (req, res) {
             return res.status(404).json(message);
         }
 
-        console.log(1);
         var result = admin.toPublicJSON();
 
-        console.log(2);
         message = {
             'name': "Success",
             'message': "Admin Login is Successful",
             'result': util.inspect(result)
         };
-        console.log('result = ' + result);
 
         var stringData = JSON.stringify(result);
         var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!@#').toString();
