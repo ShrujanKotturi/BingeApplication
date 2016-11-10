@@ -57,8 +57,7 @@ router.get('/login', function (req, res) {
                 message.device = err;
             });
         }).catch(function (error) {
-            console.error(error);
-            console.error('Error in updating the user device');
+            console.error('Error in updating the user device : ' + error);
         });
 
         //end of userId update with userDeviceMapper
@@ -83,95 +82,6 @@ router.get('/login', function (req, res) {
         message = {
             'name': error.name,
             'message': error
-        };
-        console.log(error);
-        return res.status(400).json(message);
-    });
-});
-
-router.get('/getDates', userAuthenticate, function (req, res) {
-    var sqlQuery = "SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyfoodlogs WHERE userUserId = '" + res.locals.userId + "' UNION SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyphysicallogs WHERE userUserId = '" + res.locals.userId + "'";
-    console.log(sqlQuery);
-    db.sequelize.query(sqlQuery).spread(function (results, metadata) {
-        console.log(util.inspect(metadata));
-        return res.json(results);
-    });
-});
-
-router.get('/getWeeklyLog', userAuthenticate, function (req, res) {
-    var query = _.pick(req.query, 'date');
-    if (typeof query.date !== 'string') {
-        message = {
-            'name': 'Error',
-            'message': 'Problem with query parameters'
-        };
-        console.log(message);
-        return res.status(400).send(message);
-    }
-
-    db.app.weeklyLog.findAll({
-        attributes: [['weeklyLogId', 'Weekly Log Id'], ['WeekId', 'Week Id'], ['binges', 'Number of Binges'], ['goodDays', 'No. of good days'], ['weight', 'Weight'], ['V', 'V'], ['L', 'L'], ['D', 'D'], ['events', 'Events'], ['dateAdded', 'Date Logged for']],
-        where: {
-            userUserId: res.locals.userId,
-            dateAdded: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateAdded')), '=', query.date)
-        }
-    }).then(function (supporters) {
-        res.json(supporters);
-    }).catch(function (error) {
-        message = {
-            'name': error.name,
-            'message': util.inspect(error)
-        };
-        console.log(error);
-        return res.status(400).json(message);
-    });
-});
-
-router.get('/getFoodLog', userAuthenticate, function (req, res) {
-    var query = _.pick(req.query, 'date');
-    if (typeof query.date !== 'string') {
-        message = {
-            'name': 'Error',
-            'message': 'Problem with query parameters'
-        };
-        console.log(message);
-        return res.status(400).send(message);
-    }
-
-    var results = {};
-
-    db.app.dailyPhysicalLog.findAll({
-        attributes: [['dailyPhysicalLogId', 'Daily Physical Log Id'], ['physicalActivityPerformed', 'Physical Activity Logged'], ['duration', 'Duration'], ['dateTimeLogged', 'Logged Time'], ['feelingTired', 'Feeling Tired']],
-        where: {
-            userUserId: res.locals.userId,
-            dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
-        }
-    }).then(function (supporters) {
-        results.PhysicalLogs = supporters;
-
-    }).catch(function (error) {
-        message = {
-            'name': error.name,
-            'message': util.inspect(error)
-        };
-        console.log(error);
-        return res.status(400).json(message);
-    });
-
-    db.app.dailyFoodLog.findAll({
-        attributes: [['dailyFoodLogId', 'Daily Food Log Id'], ['foodConsumedLog', 'Food Consumed'], ['foodConsumedURL', 'Image'], 'latitude', 'longitude', ['dateTimeLogged', 'Logged Time'], ['feelingBinge', 'Feeling Binge'], ['feelingVomiting', 'Feeling Vomiting'], ['returnType', 'Image Type']],
-        where: {
-            userUserId: res.locals.userId,
-            dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
-        }
-    }).then(function (supporters) {
-        results.Foodlogs = supporters;
-
-        return res.json(results);
-    }).catch(function (error) {
-        message = {
-            'name': error.name,
-            'message': util.inspect(error)
         };
         console.log(error);
         return res.status(400).json(message);
@@ -221,6 +131,16 @@ router.post('/registerDevice', function (req, res) {
         return res.status(400).json(message);
     });
 });
+
+router.get('/getDates', userAuthenticate, function (req, res) {
+    var sqlQuery = "SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyfoodlogs WHERE userUserId = '" + res.locals.userId + "' UNION SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyphysicallogs WHERE userUserId = '" + res.locals.userId + "'";
+    console.log(sqlQuery);
+    db.sequelize.query(sqlQuery).spread(function (results, metadata) {
+        console.log(util.inspect(metadata));
+        return res.json(results);
+    });
+});
+
 
 router.post('/foodLog', userAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
@@ -300,6 +220,135 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
     // });
 });
 
+router.get('/getFoodLog', userAuthenticate, function (req, res) {
+    var query = _.pick(req.query, 'date');
+    if (typeof query.date !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    var results = {};
+
+    db.app.dailyPhysicalLog.findAll({
+        attributes: [['dailyPhysicalLogId', 'Daily Physical Log Id'], ['physicalActivityPerformed', 'Physical Activity Logged'], ['duration', 'Duration'], ['dateTimeLogged', 'Logged Time'], ['feelingTired', 'Feeling Tired']],
+        where: {
+            userUserId: res.locals.userId,
+            dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
+        }
+    }).then(function (supporters) {
+        results.PhysicalLogs = supporters;
+
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+
+    db.app.dailyFoodLog.findAll({
+        attributes: [['dailyFoodLogId', 'Daily Food Log Id'], ['foodConsumedLog', 'Food Consumed'], ['foodConsumedURL', 'Image'], 'latitude', 'longitude', ['dateTimeLogged', 'Logged Time'], ['feelingBinge', 'Feeling Binge'], ['feelingVomiting', 'Feeling Vomiting'], ['returnType', 'Image Type']],
+        where: {
+            userUserId: res.locals.userId,
+            dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
+        }
+    }).then(function (supporters) {
+        results.Foodlogs = supporters;
+
+        return res.json(results);
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.post('/updateFoodLog', userAuthenticate, function (req, res) {
+    var body = _.pick(req.body, 'dailyFoodLogId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
+    body.logDateTime = new Date(body.logDateTime).toISOString();
+
+    if (typeof body.dailyFoodLogId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.logDateTime !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(403).send(message);
+    }
+
+    db.app.dailyFoodLog.find({
+        where: {
+            userUserId: res.locals.userId,
+            dailyFoodLogId: body.dailyFoodLogId
+        }
+    }).then(function (data) {
+        if (data) {
+            data.update({
+                foodConsumedLog: body.food,
+                latitude: body.latitude,
+                longitude: body.longitude,
+                feelingBinge: body.binge,
+                feelingVomiting: body.vomit,
+                dateTimeLogged: body.logDateTime
+            }).then(function (data1) {
+                console.log('data1: ' + data1);
+                message.name = 'Success';
+                message.message = 'Update to food log successful';
+                message.data = data1;
+                return res.json(message);
+            }).catch(function (error) {
+                console.error('Error in updating the user device : ' + error);
+                message.name = 'Failure';
+                message.message = 'Error in updating the food log';
+                message.error = util.inspect(error);
+                return res.status(404).send(message);
+            });
+        }
+    });
+});
+
+router.post('/deleteFoodLog', userAuthenticate, function (req, res) {
+    var body = _.pick(req.body, 'dailyFoodLogId');
+
+    if (typeof body.dailyFoodLogId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.dailyFoodLog.find({
+        where: {
+            userUserId: res.locals.userId,
+            dailyFoodLogId: body.dailyFoodLogId
+        }
+    }).then(function (data) {
+        if (data) {
+            data.destroy();
+            message.name = 'Success';
+            message.message = 'Daily log deleted';
+            return res.json(message);
+        } else {
+            message.name = 'Failure';
+            message.message = 'Trying to delete the data which isn\'t there';
+            return res.status(404).json(message);
+        }
+    }).catch(function (error) {
+        message.name = 'Failure';
+        message.message = util.inspect(error);
+        return res.status(404).json(message);
+    });
+});
+
+
 router.post('/quickLog', userAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'userId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'returnType', 'logDateTime');
     if (typeof body.userId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.returnType !== 'string' || typeof body.logDateTime !== 'string') {
@@ -343,6 +392,7 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
     });
 });
 
+
 router.post('/physicalLog', userAuthenticate, function (req, res) {
 
     var body = _.pick(req.body, 'userId', 'physicalActivityPerformed', 'duration', 'feelingTired', 'logDateTime');
@@ -385,37 +435,85 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
         };
         return res.json(message);
     });
-
-    // db.app.dailyPhysicalLog.build({
-    //     userUserId: body.userId || req.session.userId,
-    //     physicalActivityPerformed: body.physicalActivityPerformed,
-    //     duration: body.duration,
-    //     feelingTired: body.feelingTired,
-    //     dateTimeLogged: body.logDateTime
-    // }).save()
-    //     .then(function (savedObject) {
-    //         if (!savedObject) {
-    //             message = {
-    //                 'name': "Failure",
-    //                 'message': 'Error in creating physical log'
-    //             };
-    //             return res.status(403).json(message);
-    //
-    //         }
-    //         message = {
-    //             'name': "Success",
-    //             'message': "Weekly log created successfully"
-    //         };
-    //         return res.json(message);
-    //     }).catch(function (error) {
-    //     console.log(error);
-    //     message = {
-    //         'name': error.name,
-    //         'message': error.errors[0].message
-    //     };
-    //     return res.status(400).json(message);
-    // });
 });
+
+router.post('/updatePhysicalLog', userAuthenticate, function (req, res) {
+
+    var body = _.pick(req.body, 'dailyPhysicalLogId', 'physicalActivityPerformed', 'duration', 'feelingTired', 'logDateTime');
+    body.logDateTime = new Date(body.logDateTime).toISOString();
+
+    if (typeof body.dailyPhysicalLogId !== 'string' || typeof body.physicalActivityPerformed !== 'string' || typeof body.duration !== 'string' || typeof body.feelingTired !== 'string' || typeof body.logDateTime !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.dailyPhysicalLog.find({
+        where: {
+            userUserId: res.locals.userId,
+            dailyPhysicalLogId: body.dailyPhysicalLogId
+        }
+    }).then(function (data) {
+        if (data) {
+            data.update({
+                physicalActivityPerformed: body.physicalActivityPerformed,
+                duration: body.duration,
+                feelingTired: body.feelingTired,
+                dateTimeLogged: body.logDateTime
+            }).then(function (data1) {
+                console.log('data1: ' + data1);
+                message.name = 'Success';
+                message.message = 'Update to Physical log successful';
+                message.data = data1;
+                return res.json(message);
+            }).catch(function (error) {
+                console.error('Error in updating the user device : ' + error);
+                message.name = 'Failure';
+                message.message = 'Error in updating the physical log';
+                message.error = util.inspect(error);
+                return res.status(404).send(message);
+            });
+        }
+    });
+});
+
+router.post('/deletePhysicalLog', userAuthenticate, function (req, res) {
+
+    var body = _.pick(req.body, 'dailyPhysicalLogId');
+
+    if (typeof body.dailyPhysicalLogId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.dailyPhysicalLog.find({
+        where: {
+            userUserId: res.locals.userId,
+            dailyPhysicalLogId: body.dailyPhysicalLogId
+        }
+    }).then(function (data) {
+        if (data) {
+            data.destroy();
+            message.name = 'Success';
+            message.message = 'Physical log deleted';
+            return res.json(message);
+        } else {
+            message.name = 'Failure';
+            message.message = 'Trying to delete the data which isn\'t there';
+            return res.status(404).json(message);
+        }
+    }).catch(function (error) {
+        message.name = 'Failure';
+        message.message = util.inspect(error);
+        return res.status(404).json(message);
+    });
+});
+
 
 router.post('/weeklyLog', userAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'userId', 'weekId', 'binges', 'goodDays', 'V', 'L', 'D', 'events', 'weight', 'logDateTime');
@@ -503,6 +601,116 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
     //     };
     //     return res.status(400).json(message);
     // });
+});
+
+router.get('/getWeeklyLog', userAuthenticate, function (req, res) {
+    var query = _.pick(req.query, 'date');
+    if (typeof query.date !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.weeklyLog.findAll({
+        attributes: [['weeklyLogId', 'Weekly Log Id'], ['WeekId', 'Week Id'], ['binges', 'Number of Binges'], ['goodDays', 'No. of good days'], ['weight', 'Weight'], ['V', 'V'], ['L', 'L'], ['D', 'D'], ['events', 'Events'], ['dateAdded', 'Date Logged for']],
+        where: {
+            userUserId: res.locals.userId,
+            dateAdded: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateAdded')), '=', query.date)
+        }
+    }).then(function (supporters) {
+        res.json(supporters);
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.post('/updateWeeklyLog', userAuthenticate, function (req, res) {
+    var body = _.pick(req.body, 'weeklyLogId', 'weekId', 'binges', 'goodDays', 'V', 'L', 'D', 'events', 'weight', 'logDateTime');
+    body.logDateTime = new Date(body.logDateTime).toISOString();
+
+    if (typeof body.weeklyLogId !== 'string' || typeof body.weekId !== 'string' || typeof body.binges !== 'string' ||
+        typeof body.goodDays !== 'string' || typeof body.V !== 'string' || typeof body.L !== 'string' || typeof body.D !== 'string' ||
+        typeof body.events !== 'string' || typeof body.weight !== 'string' || typeof body.logDateTime !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.weeklyLog.find({
+        where: {
+            userUserId: res.locals.userId,
+            weeklyLogId: body.weeklyLogId
+        }
+    }).then(function (data) {
+        if (data) {
+            data.update({
+                binges: body.binges,
+                goodDays: body.goodDays,
+                V: body.V,
+                L: body.L,
+                D: body.D,
+                events: body.events,
+                weight: body.weight,
+                dateAdded: body.logDateTime
+            }).then(function (data1) {
+                console.log('data1: ' + data1);
+                message.name = 'Success';
+                message.message = 'Update to Weekly log successful';
+                message.data = data1;
+                return res.json(message);
+            }).catch(function (error) {
+                console.error('Error in updating the user device : ' + error);
+                message.name = 'Failure';
+                message.message = 'Error in updating the weekly log';
+                message.error = util.inspect(error);
+                return res.status(404).send(message);
+            });
+        }
+    });
+});
+
+router.post('/deleteWeeklyLog', userAuthenticate, function (req, res) {
+    var body = _.pick(req.body, 'weeklyLogId');
+
+    if (typeof body.weeklyLogId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.weeklyLog.find({
+        where: {
+            userUserId: res.locals.userId,
+            weeklyLogId: body.weeklyLogId
+        }
+    }).then(function (data) {
+        if (data) {
+            data.destroy();
+            message.name = 'Success';
+            message.message = 'Weekly log deleted';
+            return res.json(message);
+        } else {
+            message.name = 'Failure';
+            message.message = 'Trying to delete the data which isn\'t there';
+            return res.status(404).json(message);
+        }
+    }).catch(function (error) {
+        message.name = 'Failure';
+        message.message = util.inspect(error);
+        return res.status(404).json(message);
+    });
 });
 
 module.exports = router;

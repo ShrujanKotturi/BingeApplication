@@ -13,7 +13,6 @@ module.exports = function (req, res, next) {
 
         var bytes = cryptojs.AES.decrypt(decoded.token, 'abc123!@#');
         var tokenData = JSON.parse(bytes.toString(cryptojs.enc.Utf8));
-        console.log(util.inspect(tokenData));
         res.locals.userId = tokenData.userId;
         next();
     }
