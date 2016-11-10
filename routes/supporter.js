@@ -74,6 +74,7 @@ router.get('/login', function (req, res) {
 });
 
 router.get('/getAllUsers', supporterAuthenticate, function (req, res) {
+    console.log(util.inspect(req.session));
     var query = _.pick(req.query, 'supporterId');
     if (typeof query.supporterId !== 'string') {
         message = {
@@ -104,6 +105,7 @@ router.get('/getAllUsers', supporterAuthenticate, function (req, res) {
 
 router.get('/getUserFoodLog', supporterAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'userId');
+    console.log(util.inspect(req.session));
     if (typeof query.userId !== 'string') {
         message = {
             'name': 'Error',

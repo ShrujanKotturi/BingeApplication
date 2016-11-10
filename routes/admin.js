@@ -150,6 +150,7 @@ router.post('/createSupporter', adminAuthenticate, function (req, res) {
 
 router.get('/getAllSupporters', adminAuthenticate, function (req, res) {
 
+    console.log(util.inspect(req.session));
     db.app.researchers.findAll({
         attributes: [['supporterId', 'Supporter Id'], ['contactNumber', 'Contact Number'], ['createdAt', 'Created Date']],
         where: {
@@ -168,6 +169,7 @@ router.get('/getAllSupporters', adminAuthenticate, function (req, res) {
 });
 
 router.get('/getAllParticipants', adminAuthenticate, function (req, res) {
+    console.log(util.inspect(req.session));
     db.app.users.findAll({
         attributes: [['userId', 'User Name'], ['researcherSupporterId', 'Supporter Id'], ['age', 'Age'], ['createdAt', 'Created Date']],
         where: {
@@ -216,6 +218,7 @@ router.get('/getAllUsers', adminAuthenticate, function (req, res) {
 
 router.get('/getUserFoodLog', adminAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'userId');
+    console.log(util.inspect(req.session));
     if (typeof query.userId !== 'string') {
         message = {
             'name': 'Error',
