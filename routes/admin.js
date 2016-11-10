@@ -44,18 +44,17 @@ router.get('/login', function (req, res) {
         message = {
             'name': "Success",
             'message': "Admin Login is Successful",
-            'result': util.inspect(result)
+            'result': result
         };
-
-        var session = {};
+        
         var stringData = JSON.stringify(result);
         var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!@#').toString();
         var token = jwt.sign({
             token: encryptedData
         }, 'qwerty098');
         if (token) {
-            session = req.session;
-            session.adminId = admin.dataValues.supporterId;
+
+            req.session.adminId = admin.dataValues.supporterId;
             console.log(message);
             console.log(req.session);
             message.token = token;
