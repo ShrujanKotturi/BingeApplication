@@ -301,6 +301,47 @@ router.get('/getUserPhysicalLog', adminAuthenticate, function (req, res) {
     });
 });
 
+router.post('/deleteUser', adminAuthenticate, function (req, res) {
+
+    var body = _.pick(req.body, 'userId');
+
+    if (typeof body.userId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.users.find({
+        where: {
+            userId: body.userId,
+            isActive: true
+        }
+    }).then(function (data) {
+        if (data) {
+            data.update({
+                isActive: false
+            }).then(function (data1) {
+                message.name = 'Success';
+                message.message = 'The user is not active now';
+                message.data = data1;
+                return res.json(message);
+            }).catch(function (error) {
+                console.error('Error in deleting the user : ' + error);
+                message.name = 'Failure';
+                message.message = 'Error in deleting the user ';
+                message.error = util.inspect(error);
+                return res.status(404).send(message);
+            });
+        } else {
+            message.name = 'Failure';
+            message.message = 'You are trying to delete an unactive user';
+            return res.status(404).send(message);
+        }
+    });
+});
+
 router.post('/logout', function (req, res) {
     var body = _.pick(req.body, 'adminId');
     if (typeof body.adminId !== 'string') {

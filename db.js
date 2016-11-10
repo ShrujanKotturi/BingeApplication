@@ -1,20 +1,21 @@
 /**
  * Created by shruj on 11/01/2016.
  */
-var Sequelize = require('sequelize');
-var env = process.env.NODE_ENV || 'development';
+var Sequelize = require('sequelize'),
+    CONFIG = require('./config.json');
+var env = process.env.NODE_ENV || CONFIG.DEVELOPMENT;
 var sequelize;
 
-if (env === 'production') {
-    sequelize = new Sequelize('BingeApplication', 'root', 'password', {
-        host: 'localhost',
-        dialect: 'mysql',
+if (env === CONFIG.PRODUCTION) {
+    sequelize = new Sequelize(CONFIG.DATABASE, CONFIG.USERNAME, CONFIG.PASSWORD_PROD, {
+        host: CONFIG.HOST,
+        dialect: "mysql",
         storage: __dirname + '/data/bingeapplication.sql'
     });
 } else {
-    sequelize = new Sequelize('BingeApplication', 'root', '', {
-        host: 'localhost',
-        dialect: 'mysql',
+    sequelize = new Sequelize(CONFIG.DATABASE, CONFIG.USERNAME, '', {
+        host: CONFIG.HOST,
+        dialect: "mysql",
         storage: __dirname + '/data/bingeapplication.sql'
     });
 }

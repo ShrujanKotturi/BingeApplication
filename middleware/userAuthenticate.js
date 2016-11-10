@@ -9,7 +9,6 @@ module.exports = function (req, res, next) {
     var token = req.get('x-auth');
     try {
         var decoded = jwt.verify(token, 'qwerty098');
-        //console.log(decoded);
 
         var bytes = cryptojs.AES.decrypt(decoded.token, 'abc123!@#');
         var tokenData = JSON.parse(bytes.toString(cryptojs.enc.Utf8));
