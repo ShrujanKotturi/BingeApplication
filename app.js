@@ -5,9 +5,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var index = require('./routes/index'),
-    users = require('./routes/users'),
-    participants = require('./routes/participants'),
+var participants = require('./routes/participants'),
     admin = require('./routes/admin'),
     supporters = require('./routes/supporter'),
     session = require('express-session');
@@ -38,8 +36,6 @@ app.use(session({
     saveUninitialized: true
 }));
 
-app.use('/', index);
-app.use('/users', users);
 app.use('/participants', participants);
 app.use('/admin', admin);
 app.use('/supporters', supporters);

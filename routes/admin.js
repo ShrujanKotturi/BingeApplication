@@ -46,14 +46,13 @@ router.get('/login', function (req, res) {
             'message': "Admin Login is Successful",
             'result': result
         };
-        
+
         var stringData = JSON.stringify(result);
         var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!@#').toString();
         var token = jwt.sign({
             token: encryptedData
         }, 'qwerty098');
         if (token) {
-
             req.session.adminId = admin.dataValues.supporterId;
             console.log(message);
             console.log(req.session);
@@ -104,13 +103,13 @@ router.post('/createUser', adminAuthenticate, function (req, res) {
             console.log(message);
             return res.json(message);
         }).catch(function (error) {
-        message = {
-            'name': error.name,
-            'message': util.inspect(error)
-        };
-        console.log(error);
-        return res.status(400).json(message);
-    });
+            message = {
+                'name': error.name,
+                'message': util.inspect(error)
+            };
+            console.log(error);
+            return res.status(400).json(message);
+        });
 });
 
 router.post('/createSupporter', adminAuthenticate, function (req, res) {
@@ -140,13 +139,13 @@ router.post('/createSupporter', adminAuthenticate, function (req, res) {
             console.log(message);
             return res.json(message);
         }).catch(function (error) {
-        console.log(error);
-        message = {
-            'name': error.name,
-            'message': error.message
-        };
-        return res.status(400).json(message);
-    });
+            console.log(error);
+            message = {
+                'name': error.name,
+                'message': error.message
+            };
+            return res.status(400).json(message);
+        });
 });
 
 router.get('/getAllSupporters', adminAuthenticate, function (req, res) {
@@ -360,7 +359,7 @@ router.post('/logout', function (req, res) {
         return res.status(400).send(message);
     }
 
-    req.session.destroy();
+    req.session.adminId = null;
     console.log(req.session);
     //res.redirect()
     res.send();

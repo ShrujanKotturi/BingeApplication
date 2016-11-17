@@ -78,6 +78,10 @@ module.exports = function (sequelize, DataTypes) {
             toPublicJSON: function () {
                 var json = this.toJSON();
                 return _.pick(json, 'userId', 'isActive', 'age', 'score', 'logNotifications', 'appNotifications', 'quickLog', 'sendMotivationalMessages', 'playGame');
+            },
+            toPasswordPublicJSON: function () {
+                var json = this.toJSON();
+                return _.pick(json, 'userId', 'password', 'isActive', 'age', 'score', 'logNotifications', 'appNotifications', 'quickLog', 'sendMotivationalMessages', 'playGame');
             }
         }
     }, {
@@ -135,6 +139,10 @@ module.exports = function (sequelize, DataTypes) {
             toPublicJSON: function () {
                 var json = this.toJSON();
                 return _.pick(json, 'supporterId', 'contactNumber', 'isAdmin');
+            },
+            toPasswordPublicJSON: function () {
+                var json = this.toJSON();
+                return _.pick(json, 'supporterId', 'password', 'contactNumber', 'isAdmin');
             }
         }
     }, {

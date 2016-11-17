@@ -75,20 +75,11 @@ router.get('/login', function (req, res) {
 
 router.get('/getAllUsers', supporterAuthenticate, function (req, res) {
     console.log(req.session);
-    var query = _.pick(req.query, 'supporterId');
-    if (typeof query.supporterId !== 'string') {
-        message = {
-            'name': 'Error',
-            'message': 'Problem with query parameters'
-        };
-        console.log(message);
-        return res.status(400).send(message);
-    }
 
     db.app.users.findAll({
         attributes: [['userId', 'User Name'], ['researcherSupporterId', 'Supporter Id'], ['age', 'Age'], ['createdAt', 'Created Date']],
         where: {
-            researcherSupporterId: query.supporterId,
+            researcherSupporterId: req.session.supporterId,
             isActive: true
         }
     }).then(function (supporters) {
@@ -190,6 +181,51 @@ router.get('/getUserPhysicalLog', supporterAuthenticate, function (req, res) {
     });
 });
 
+router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
+    var body = _.pick(req.body, 'appointmentTime', 'title', 'comments', 'createdOn', 'userId');
+    console.log(req.session);
+    if (typeof body.appointmentTime !== 'string' || typeof body.title !== 'string' || typeof body.comments !== 'string' || typeof body.createdOn !== 'string' || typeof body.userId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.appointments.findOrCreate({
+        where: {
+            userUserId: body.userId,
+            appointmentTime: body.appointmentTime,
+            title: body.title,
+            comments: body.comments,
+            createdOn: body.createdOn,
+            researcherSupporterId: req.session.supporterId
+        },
+        defaults: {
+            userUserId: body.userId,
+            appointmentTime: body.appointmentTime,
+            title: body.title,
+            comments: body.comments,
+            createdOn: body.createdOn,
+            researcherSupporterId: req.session.supporterId
+        }
+    }).spread(function (foodLog, created) {
+        if (!created) {
+            message = {
+                'name': 'Failure',
+                'message': 'Appointment already exists with the same date time'
+            };
+            return res.status(401).json(message);
+        }
+        message = {
+            'name': 'Success',
+            'message': 'Appointment created'
+        };
+        return res.json(message);
+    });
+});
+
 router.post('/logout', function (req, res) {
     var body = _.pick(req.body, 'supporterId');
     console.log(req.session);
@@ -202,11 +238,12 @@ router.post('/logout', function (req, res) {
         return res.status(400).send(message);
     }
 
-    req.session.destroy();
+    req.session.supporterId = null;
     //res.redirect()
     console.log(req.session);
     res.send();
 });
+
 
 // router.post('/createUser', function(req, res) {
 //
