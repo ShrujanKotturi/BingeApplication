@@ -330,7 +330,7 @@ router.post('/deleteUser', adminAuthenticate, function (req, res) {
             }).then(function (data1) {
                 message.name = 'Success';
                 message.message = 'The user is not active now';
-                message.data = data1;
+                message.data = data1.toPublicJSON();
                 return res.json(message);
             }).catch(function (error) {
                 console.error('Error in deleting the user : ' + error);
@@ -342,6 +342,48 @@ router.post('/deleteUser', adminAuthenticate, function (req, res) {
         } else {
             message.name = 'Failure';
             message.message = 'You are trying to delete an unactive user';
+            return res.status(404).send(message);
+        }
+    });
+});
+
+router.post('/deleteSupporter', adminAuthenticate, function (req, res) {
+
+    console.log(req.session);
+    var body = _.pick(req.body, 'supporterId');
+
+    if (typeof body.supporterId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.researchers.find({
+        where: {
+            supporterId: body.supporterId,
+            isActive: true
+        }
+    }).then(function (data) {
+        if (data) {
+            data.update({
+                isActive: false
+            }).then(function (data1) {
+                message.name = 'Success';
+                message.message = 'The supporter is not active now';
+                message.data = data1.toPublicJSON();
+                return res.json(message);
+            }).catch(function (error) {
+                console.error('Error in deleting the supporter : ' + error);
+                message.name = 'Failure';
+                message.message = 'Error in deleting the supporter ';
+                message.error = util.inspect(error);
+                return res.status(404).send(message);
+            });
+        } else {
+            message.name = 'Failure';
+            message.message = 'You are trying to delete an unactive supporter';
             return res.status(404).send(message);
         }
     });
