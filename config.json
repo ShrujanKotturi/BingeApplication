@@ -1,11 +1,13 @@
 {
   "SERVER_API_KEY": "AIzaSyDwfWxJ1Mv4T5TFItRNpPxZfWpgy-wi8LA",
   "DATABASE": "BingeApplication",
+  "DATABASE_TEST": "BingeApplication_test",
   "USERNAME": "root",
   "PASSWORD_DEV": "",
   "PASSWORD_PROD": "password",
   "HOST": "localhost",
   "DIALECT ": "mysql",
   "PRODUCTION": "production",
-  "DEVELOPMENT": "development"
+  "DEVELOPMENT": "development",
+  "TESTING": "testing"
 }

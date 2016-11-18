@@ -12,6 +12,12 @@ if (env === CONFIG.PRODUCTION) {
         dialect: "mysql",
         storage: __dirname + '/data/bingeapplication.sql'
     });
+} else if (env === CONFIG.TESTING) {
+    sequelize = new Sequelize(CONFIG.DATABASE_TEST, CONFIG.USERNAME, CONFIG.PASSWORD_PROD, {
+        host: CONFIG.HOST,
+        dialect: "mysql",
+        storage: __dirname + '/data/bingeapplication.sql'
+    });
 } else {
     sequelize = new Sequelize(CONFIG.DATABASE, CONFIG.USERNAME, CONFIG.PASSWORD_DEV, {
         host: CONFIG.HOST,
