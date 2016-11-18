@@ -362,7 +362,7 @@ router.get('/getAllMessages', supporterAuthenticate, function(req, res) {
         return res.status(400).send(message);
     }
 
-    db.app.notifications.findOne({
+    db.app.notifications.findAll({
         attributes: [['notificationId', 'Id'], ['notificationMessage', 'Message'], ['dateTimeSent', 'dateTimeSent'], ['from', 'from']],
         where: {
             to: query.userId
@@ -373,6 +373,66 @@ router.get('/getAllMessages', supporterAuthenticate, function(req, res) {
         } else {
             message.name = 'Failure';
             message.message = 'There are no messages for the user';
+            return res.status(404).send(message);
+        }
+    }).catch(function(error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+//Appointments
+router.get('/getAllSupporterAppointments', supporterAuthenticate, function(req, res) {
+    db.app.appointments.findAll({
+        attributes: [['appointmentId', 'Id'], ['appointmentTime', 'appointmentTime'], ['title', 'title'], ['comments', 'comments'], ['userUserId', 'UserId'], ['createdOn', 'createdOn'], ['researcherSupporterId', 'SupporterId']],
+        where: {
+            researcherSupporterId: req.session.supporterId
+        }
+    }).then(function(appointments) {
+        if (!_.isEmpty(appointments)) {
+            return res.json(appointments);
+        } else {
+            message.name = 'Failure';
+            message.message = 'There are no appointments for the supporter';
+            return res.status(404).send(message);
+        }
+    }).catch(function(error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.get('/getAllParticipantAppointments', supporterAuthenticate, function(req, res) {
+    var query = _.pick(req.query, 'userId');
+
+    if (typeof query.userId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.appointments.findAll({
+        attributes: [['appointmentId', 'Id'], ['appointmentTime', 'appointmentTime'], ['title', 'title'], ['comments', 'comments'], ['userUserId', 'UserId'], ['createdOn', 'createdOn'], ['researcherSupporterId', 'SupporterId']],
+        where: {
+            userUserId: query.userId
+        }
+    }).then(function(appointments) {
+        if (!_.isEmpty(appointments)) {
+            return res.json(appointments);
+        } else {
+            message.name = 'Failure';
+            message.message = 'There are no appointments for the supporter';
             return res.status(404).send(message);
         }
     }).catch(function(error) {
@@ -403,6 +463,7 @@ router.post('/logout', function(req, res) {
     console.log(req.session);
     res.send();
 });
+
 
 
 module.exports = router;
