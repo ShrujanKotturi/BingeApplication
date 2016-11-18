@@ -116,7 +116,7 @@ router.post('/registerDevice', function (req, res) {
                 fcmToken: body.fcmToken
             }
         }).then(function (savedObject) {
-            if (!savedObject) {
+            if (_.isEmpty(savedObject)) {
                 message = {
                     'name': "Failure",
                     'message': 'Error in registering the device'
@@ -194,7 +194,7 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
             dateTimeLogged: body.logDateTime
         }
     }).spread(function (foodLog, created) {
-        if (!created) {
+        if (_.isEmpty(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Food Log with the given details exists'
@@ -237,7 +237,6 @@ router.get('/getFoodLog', userAuthenticate, function (req, res) {
         }
     }).then(function (supporters) {
         results.PhysicalLogs = supporters;
-
     }).catch(function (error) {
         message = {
             'name': error.name,
@@ -255,7 +254,6 @@ router.get('/getFoodLog', userAuthenticate, function (req, res) {
         }
     }).then(function (supporters) {
         results.Foodlogs = supporters;
-
         return res.json(results);
     }).catch(function (error) {
         message = {
@@ -285,7 +283,7 @@ router.post('/updateFoodLog', userAuthenticate, function (req, res) {
             dailyFoodLogId: body.dailyFoodLogId
         }
     }).then(function (data) {
-        if (data) {
+        if (!_.isEmpty(data)) {
             data.update({
                 foodConsumedLog: body.food,
                 latitude: body.latitude,
@@ -327,7 +325,7 @@ router.post('/deleteFoodLog', userAuthenticate, function (req, res) {
             dailyFoodLogId: body.dailyFoodLogId
         }
     }).then(function (data) {
-        if (data) {
+        if (!_.isEmpty(data)) {
             data.destroy();
             message.name = 'Success';
             message.message = 'Daily log deleted';
@@ -396,7 +394,7 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
             returnType: body.returnType
         }
     }).spread(function (foodLog, created) {
-        if (!created) {
+        if (_.isEmpty(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Error in creating quick log'
@@ -408,7 +406,7 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
             'message': 'Quick log created successfully'
         };
         return res.json(message);
-    }).catch(function(error) {
+    }).catch(function (error) {
         message = {
             'name': 'Failure',
             'message': 'Couldn\'t create quick log',
@@ -468,7 +466,7 @@ router.post('/updateQuickLog', userAuthenticate, function (req, res) {
             dailyFoodLogId: body.dailyFoodLogId
         }
     }).then(function (data) {
-        if (data) {
+        if (!_.isEmpty(data)) {
             data.update({
                 foodConsumedLog: body.food,
                 latitude: body.latitude,
@@ -524,7 +522,7 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
             dateTimeLogged: body.logDateTime
         }
     }).spread(function (foodLog, created) {
-        if (!created) {
+        if (_.isEmpty(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Physical Log with the given details exists'
@@ -536,7 +534,7 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
             'message': 'Physical Log created'
         };
         return res.json(message);
-    }).catch(function(error) {
+    }).catch(function (error) {
         message = {
             'name': 'Failure',
             'message': 'Couldn\'t create physical log',
@@ -566,7 +564,7 @@ router.post('/updatePhysicalLog', userAuthenticate, function (req, res) {
             dailyPhysicalLogId: body.dailyPhysicalLogId
         }
     }).then(function (data) {
-        if (data) {
+        if (!_.isEmpty(data)) {
             data.update({
                 physicalActivityPerformed: body.physicalActivityPerformed,
                 duration: body.duration,
@@ -607,7 +605,7 @@ router.post('/deletePhysicalLog', userAuthenticate, function (req, res) {
             dailyPhysicalLogId: body.dailyPhysicalLogId
         }
     }).then(function (data) {
-        if (data) {
+        if (!_.isEmpty(data)) {
             data.destroy();
             message.name = 'Success';
             message.message = 'Physical log deleted';
@@ -664,7 +662,7 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
             dateAdded: body.logDateTime
         }
     }).spread(function (foodLog, created) {
-        if (!created) {
+        if (_.isEmpty(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Weekly Log with the given details exists'
@@ -676,7 +674,7 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
             'message': 'Weekly Log created'
         };
         return res.json(message);
-    }).catch(function(error) {
+    }).catch(function (error) {
         message = {
             'name': 'Failure',
             'message': 'Couldn\'t create weekly log',
@@ -696,8 +694,11 @@ router.get('/getWeeklyLog', userAuthenticate, function (req, res) {
             userUserId: req.session.userId
             // dateAdded: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateAdded')), '=', query.date)
         }
-    }).then(function (supporters) {
-        res.json(supporters);
+    }).then(function (weeklyLog) {
+        if (!_.isEmpty(weeklyLog))
+            return res.json(weeklyLog);
+        else
+            return res.status(400).json({ 'name': 'Failure', 'message': 'No weekly log exists' });
     }).catch(function (error) {
         message = {
             'name': error.name,
@@ -728,7 +729,7 @@ router.post('/updateWeeklyLog', userAuthenticate, function (req, res) {
             weeklyLogId: body.weeklyLogId
         }
     }).then(function (data) {
-        if (data) {
+        if (!_.isEmpty(data)) {
             data.update({
                 binges: body.binges,
                 goodDays: body.goodDays,
@@ -772,7 +773,7 @@ router.post('/deleteWeeklyLog', userAuthenticate, function (req, res) {
             weeklyLogId: body.weeklyLogId
         }
     }).then(function (data) {
-        if (data) {
+        if (!_.isEmpty(data)) {
             data.destroy();
             message.name = 'Success';
             message.message = 'Weekly log deleted';
@@ -786,6 +787,45 @@ router.post('/deleteWeeklyLog', userAuthenticate, function (req, res) {
         message.name = 'Failure';
         message.message = util.inspect(error);
         return res.status(404).json(message);
+    });
+});
+
+router.post('/deleteAppointment', adminAuthenticate, function (req, res) {
+    console.log(req.session);
+    var body = _.pick(req.body, 'appointmentId');
+
+    if (typeof body.appointmentId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.appointments.find({
+        where: {
+            appointmentId: body.appointmentId,
+            researcherSupporterId: req.session.supporterId
+        }
+    }).then(function (data) {
+        if (!_.isEmpty(data)) {
+            data.destroy();
+            message.name = 'Success';
+            message.message = 'Appointment deleted';
+            return res.json(message);
+        }
+        else {
+            message.name = 'Failure';
+            message.message = 'Could\'t find the appointment';
+            return res.json(message);
+        }
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
     });
 });
 

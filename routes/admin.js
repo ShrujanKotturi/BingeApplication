@@ -14,7 +14,7 @@ var db = require('../db');
 var message = {};
 
 
-router.get('/login', function(req, res) {
+router.get('/login', function (req, res) {
     var query = _.pick(req.query, 'adminId', 'password');
     if (typeof query.adminId !== 'string' || typeof query.password !== 'string') {
         message = {
@@ -29,7 +29,7 @@ router.get('/login', function(req, res) {
             supporterId: query.adminId,
             isAdmin: true
         }
-    }).then(function(admin) {
+    }).then(function (admin) {
         if (_.isEmpty(admin.dataValues) || !bcrypt.compareSync(query.password, admin.get('passwordHash'))) {
             message = {
                 'name': "Failure",
@@ -63,7 +63,7 @@ router.get('/login', function(req, res) {
             return res.status(400).send();
 
 
-    }).catch(function(error) {
+    }).catch(function (error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -73,7 +73,7 @@ router.get('/login', function(req, res) {
     });
 });
 
-router.post('/createUser', adminAuthenticate, function(req, res) {
+router.post('/createUser', adminAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'userId', 'password', 'age', 'supporterId', 'logNotification', 'appNotification', 'quickLog', 'motivationalMessages');
     console.log(req.session);
     if (typeof body.userId !== 'string' || typeof body.password !== 'string' || typeof body.age !== 'string' || typeof body.supporterId !== 'string' || typeof body.logNotification !== 'string' || typeof body.appNotification !== 'string' || typeof body.quickLog !== 'string' || typeof body.motivationalMessages !== 'string') {
@@ -106,8 +106,8 @@ router.post('/createUser', adminAuthenticate, function(req, res) {
             quickLog: body.quickLog,
             sendMotivationalMessages: body.motivationalMessages
         }
-    }).spread(function(savedObject, created) {
-        if (!created) {
+    }).spread(function (savedObject, created) {
+        if (_is.Empty(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Couldn\'t create user'
@@ -121,7 +121,7 @@ router.post('/createUser', adminAuthenticate, function(req, res) {
         };
         console.log(message);
         return res.json(message);
-    }).catch(function(error) {
+    }).catch(function (error) {
         message = {
             'name': 'Failure',
             'message': 'Couldn\'t create user',
@@ -132,7 +132,7 @@ router.post('/createUser', adminAuthenticate, function(req, res) {
 
 });
 
-router.post('/createSupporter', adminAuthenticate, function(req, res) {
+router.post('/createSupporter', adminAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'supporterId', 'password', 'contactNumber');
     console.log(req.session);
     if (typeof body.supporterId !== 'string' || typeof body.password !== 'string' || typeof body.contactNumber !== 'string') {
@@ -158,8 +158,8 @@ router.post('/createSupporter', adminAuthenticate, function(req, res) {
             contactNumber: body.contactNumber,
             isAdmin: false
         }
-    }).spread(function(savedObject, created) {
-        if (!created) {
+    }).spread(function (savedObject, created) {
+        if (_is.Empty(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Couldn\'t create supporter'
@@ -173,7 +173,7 @@ router.post('/createSupporter', adminAuthenticate, function(req, res) {
         };
         console.log(message);
         return res.json(message);
-    }).catch(function(error) {
+    }).catch(function (error) {
         message = {
             'name': 'Failure',
             'message': 'Couldn\'t create supporter',
@@ -183,7 +183,7 @@ router.post('/createSupporter', adminAuthenticate, function(req, res) {
     });
 });
 
-router.get('/getAllSupporters', adminAuthenticate, function(req, res) {
+router.get('/getAllSupporters', adminAuthenticate, function (req, res) {
 
     console.log(util.inspect(req.session));
     db.app.researchers.findAll({
@@ -191,9 +191,12 @@ router.get('/getAllSupporters', adminAuthenticate, function(req, res) {
         where: {
             isAdmin: false
         }
-    }).then(function(supporters) {
-        res.json(supporters);
-    }).catch(function(error) {
+    }).then(function (supporters) {
+        if (!_.isEmpty(supporters))
+            return res.json(supporters);
+        else
+            return res.status(400).json({ 'name': 'Failure', 'message': 'No supporters exists' });
+    }).catch(function (error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -203,16 +206,19 @@ router.get('/getAllSupporters', adminAuthenticate, function(req, res) {
     });
 });
 
-router.get('/getAllParticipants', adminAuthenticate, function(req, res) {
+router.get('/getAllParticipants', adminAuthenticate, function (req, res) {
     console.log(util.inspect(req.session));
     db.app.users.findAll({
         attributes: [['userId', 'User Name'], ['researcherSupporterId', 'Supporter Id'], ['age', 'Age'], ['createdAt', 'Created Date']],
         where: {
             isActive: true
         }
-    }).then(function(supporters) {
-        res.json(supporters);
-    }).catch(function(error) {
+    }).then(function (users) {
+        if (!_.isEmpty(users))
+            return res.json(users);
+        else
+            return res.status(400).json({ 'name': 'Failure', 'message': 'No participants exists' });
+    }).catch(function (error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -222,7 +228,7 @@ router.get('/getAllParticipants', adminAuthenticate, function(req, res) {
     });
 });
 
-router.get('/getAllUsers', adminAuthenticate, function(req, res) {
+router.get('/getAllSupporterUsers', adminAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'supporterId');
     console.log(req.session);
     if (typeof query.supporterId !== 'string') {
@@ -240,9 +246,12 @@ router.get('/getAllUsers', adminAuthenticate, function(req, res) {
             researcherSupporterId: query.supporterId,
             isActive: true
         }
-    }).then(function(supporters) {
-        res.json(supporters);
-    }).catch(function(error) {
+    }).then(function (users) {
+        if (!_.isEmpty(users))
+            return res.json(users);
+        else
+            return res.status(400).json({ 'name': 'Failure', 'message': 'No users exists' });
+    }).catch(function (error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -252,7 +261,7 @@ router.get('/getAllUsers', adminAuthenticate, function(req, res) {
     });
 });
 
-router.get('/getUserFoodLog', adminAuthenticate, function(req, res) {
+router.get('/getUserFoodLog', adminAuthenticate, function (req, res) {
     console.log(req.session);
     var query = _.pick(req.query, 'userId');
     console.log(util.inspect(req.session));
@@ -270,9 +279,12 @@ router.get('/getUserFoodLog', adminAuthenticate, function(req, res) {
         where: {
             userUserId: query.userId
         }
-    }).then(function(supporters) {
-        res.json(supporters);
-    }).catch(function(error) {
+    }).then(function (foodLog) {
+        if (!_.isEmpty(foodLog))
+            return res.json(foodLog);
+        else
+            return res.status(400).json({ 'name': 'Failure', 'message': 'No food log exists' });
+    }).catch(function (error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -282,7 +294,7 @@ router.get('/getUserFoodLog', adminAuthenticate, function(req, res) {
     });
 });
 
-router.get('/getUserWeeklyLog', adminAuthenticate, function(req, res) {
+router.get('/getUserWeeklyLog', adminAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'userId');
     console.log(req.session);
     if (typeof query.userId !== 'string') {
@@ -299,9 +311,12 @@ router.get('/getUserWeeklyLog', adminAuthenticate, function(req, res) {
         where: {
             userUserId: query.userId
         }
-    }).then(function(supporters) {
-        res.json(supporters);
-    }).catch(function(error) {
+    }).then(function (weeklyLog) {
+        if (!_.isEmpty(weeklyLog))
+            return res.json(weeklyLog);
+        else
+            return res.status(400).json({ 'name': 'Failure', 'message': 'No weekly log exists' });
+    }).catch(function (error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -311,7 +326,7 @@ router.get('/getUserWeeklyLog', adminAuthenticate, function(req, res) {
     });
 });
 
-router.get('/getUserPhysicalLog', adminAuthenticate, function(req, res) {
+router.get('/getUserPhysicalLog', adminAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'userId');
     console.log(req.session);
     if (typeof query.userId !== 'string') {
@@ -328,9 +343,12 @@ router.get('/getUserPhysicalLog', adminAuthenticate, function(req, res) {
         where: {
             userUserId: query.userId
         }
-    }).then(function(supporters) {
-        res.json(supporters);
-    }).catch(function(error) {
+    }).then(function (physicalLog) {
+        if (!_.isEmpty(physicalLog))
+            return res.json(physicalLog);
+        else
+            return res.status(400).json({ 'name': 'Failure', 'message': 'No physical log exists' });
+    }).catch(function (error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -340,7 +358,7 @@ router.get('/getUserPhysicalLog', adminAuthenticate, function(req, res) {
     });
 });
 
-router.post('/deleteUser', adminAuthenticate, function(req, res) {
+router.post('/deleteUser', adminAuthenticate, function (req, res) {
 
     console.log(req.session);
     var body = _.pick(req.body, 'userId');
@@ -358,16 +376,16 @@ router.post('/deleteUser', adminAuthenticate, function(req, res) {
             userId: body.userId,
             isActive: true
         }
-    }).then(function(data) {
-        if (data) {
+    }).then(function (data) {
+        if (!_.isEmpty(data)) {
             data.update({
                 isActive: false
-            }).then(function(data1) {
+            }).then(function (data1) {
                 message.name = 'Success';
                 message.message = 'The user is not active now';
                 message.data = data1.toPublicJSON();
                 return res.json(message);
-            }).catch(function(error) {
+            }).catch(function (error) {
                 console.error('Error in deleting the user : ' + error);
                 message.name = 'Failure';
                 message.message = 'Error in deleting the user ';
@@ -382,7 +400,7 @@ router.post('/deleteUser', adminAuthenticate, function(req, res) {
     });
 });
 
-router.post('/deleteSupporter', adminAuthenticate, function(req, res) {
+router.post('/deleteSupporter', adminAuthenticate, function (req, res) {
     console.log(req.session);
     var body = _.pick(req.body, 'supporterId');
 
@@ -399,7 +417,7 @@ router.post('/deleteSupporter', adminAuthenticate, function(req, res) {
             supporterId: body.supporterId,
             isActive: true
         }
-    }).then(function(data) {
+    }).then(function (data) {
         if (data) {
             db.app.users.findAll({
                 attributes: [['userId', 'User Name'], ['researcherSupporterId', 'Supporter Id'], ['age', 'Age'], ['createdAt', 'Created Date']],
@@ -407,7 +425,7 @@ router.post('/deleteSupporter', adminAuthenticate, function(req, res) {
                     researcherSupporterId: body.supporterId,
                     isActive: true
                 }
-            }).then(function(supporters) {
+            }).then(function (supporters) {
                 if (!_.isEmpty(supporters)) {
                     message.name = 'Failure';
                     message.message = 'Can\'t delete the supporter, he has participants assigned to him';
@@ -415,12 +433,12 @@ router.post('/deleteSupporter', adminAuthenticate, function(req, res) {
                 } else {
                     data.update({
                         isActive: false
-                    }).then(function(data1) {
+                    }).then(function (data1) {
                         message.name = 'Success';
                         message.message = 'The supporter is not active now';
                         message.data = data1.toPublicJSON();
                         return res.json(message);
-                    }).catch(function(error) {
+                    }).catch(function (error) {
                         console.error('Error in deleting the supporter : ' + error);
                         message.name = 'Failure';
                         message.message = 'Error in deleting the supporter ';
@@ -428,7 +446,7 @@ router.post('/deleteSupporter', adminAuthenticate, function(req, res) {
                         return res.status(404).send(message);
                     });
                 }
-            }).catch(function(error) {
+            }).catch(function (error) {
                 message = {
                     'name': error.name,
                     'message': util.inspect(error)
@@ -446,7 +464,7 @@ router.post('/deleteSupporter', adminAuthenticate, function(req, res) {
     });
 });
 
-router.get('/getAllMessages', adminAuthenticate, function(req, res) {
+router.get('/getAllMessages', adminAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'userId');
     console.log(req.session);
     if (typeof query.userId !== 'string') {
@@ -463,7 +481,7 @@ router.get('/getAllMessages', adminAuthenticate, function(req, res) {
         where: {
             to: query.userId
         }
-    }).then(function(notifications) {
+    }).then(function (notifications) {
         if (!_.isEmpty(notifications)) {
             return res.json(notifications);
         } else {
@@ -471,7 +489,7 @@ router.get('/getAllMessages', adminAuthenticate, function(req, res) {
             message.message = 'There are no messages for the user';
             return res.status(404).send(message);
         }
-    }).catch(function(error) {
+    }).catch(function (error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -482,7 +500,7 @@ router.get('/getAllMessages', adminAuthenticate, function(req, res) {
 });
 
 //Appointments
-router.get('/getAllSupporterAppointments', adminAuthenticate, function(req, res) {
+router.get('/getAllSupporterAppointments', adminAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'supporterId');
 
     if (typeof query.supporterId !== 'string') {
@@ -499,7 +517,7 @@ router.get('/getAllSupporterAppointments', adminAuthenticate, function(req, res)
         where: {
             researcherSupporterId: query.supporterId
         }
-    }).then(function(appointments) {
+    }).then(function (appointments) {
         if (!_.isEmpty(appointments)) {
             return res.json(appointments);
         } else {
@@ -507,7 +525,7 @@ router.get('/getAllSupporterAppointments', adminAuthenticate, function(req, res)
             message.message = 'There are no appointments for the supporter';
             return res.status(404).send(message);
         }
-    }).catch(function(error) {
+    }).catch(function (error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -517,7 +535,7 @@ router.get('/getAllSupporterAppointments', adminAuthenticate, function(req, res)
     });
 });
 
-router.get('/getAllParticipantAppointments', adminAuthenticate, function(req, res) {
+router.get('/getAllParticipantAppointments', adminAuthenticate, function (req, res) {
     var query = _.pick(req.query, 'userId');
 
     if (typeof query.userId !== 'string') {
@@ -534,7 +552,7 @@ router.get('/getAllParticipantAppointments', adminAuthenticate, function(req, re
         where: {
             userUserId: query.userId
         }
-    }).then(function(appointments) {
+    }).then(function (appointments) {
         if (!_.isEmpty(appointments)) {
             return res.json(appointments);
         } else {
@@ -542,7 +560,7 @@ router.get('/getAllParticipantAppointments', adminAuthenticate, function(req, re
             message.message = 'There are no appointments for the supporter';
             return res.status(404).send(message);
         }
-    }).catch(function(error) {
+    }).catch(function (error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -552,7 +570,45 @@ router.get('/getAllParticipantAppointments', adminAuthenticate, function(req, re
     });
 });
 
-router.post('/logout', function(req, res) {
+router.post('/deleteAppointment', adminAuthenticate, function (req, res) {
+    console.log(req.session);
+    var body = _.pick(req.body, 'appointmentId');
+
+    if (typeof body.appointmentId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.appointments.find({
+        where: {
+            appointmentId: body.appointmentId
+        }
+    }).then(function (data) {
+        if (!_.isEmpty(data)) {
+            data.destroy();
+            message.name = 'Success';
+            message.message = 'Appointment deleted';
+            return res.json(message);
+        }
+        else {
+            message.name = 'Failure';
+            message.message = 'Could\'t find the appointment';
+            return res.json(message);
+        }
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.post('/logout', function (req, res) {
     var body = _.pick(req.body, 'adminId');
     console.log(req.session);
     if (typeof body.adminId !== 'string') {
