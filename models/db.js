@@ -67,28 +67,29 @@ module.exports = function (sequelize, DataTypes) {
             defaultValue: false
         }
     }, {
-        hooks: {
-            beforeValidate: function (users, options) {
-                if (typeof users.userId === 'string') {
-                    users.userId = users.userId.toLowerCase();
+            hooks: {
+                beforeValidate: function (users, options) {
+                    if (typeof users.userId === 'string') {
+                        users.userId = users.userId.toLowerCase();
+                    }
+                }
+            },
+            instanceMethods: {
+                toPublicJSON: function () {
+                    var json = this.toJSON();
+                    return _.pick(json, 'userId', 'isActive', 'age', 'score', 'logNotifications', 'appNotifications', 'quickLog', 'sendMotivationalMessages', 'playGame');
+                },
+                toPasswordPublicJSON: function () {
+                    var json = this.toJSON();
+                    return _.pick(json, 'userId', 'password', 'isActive', 'age', 'score', 'logNotifications', 'appNotifications', 'quickLog', 'sendMotivationalMessages', 'playGame');
                 }
             }
-        },
-        instanceMethods: {
-            toPublicJSON: function () {
-                var json = this.toJSON();
-                return _.pick(json, 'userId', 'isActive', 'age', 'score', 'logNotifications', 'appNotifications', 'quickLog', 'sendMotivationalMessages', 'playGame');
-            },
-            toPasswordPublicJSON: function () {
-                var json = this.toJSON();
-                return _.pick(json, 'userId', 'password', 'isActive', 'age', 'score', 'logNotifications', 'appNotifications', 'quickLog', 'sendMotivationalMessages', 'playGame');
-            }
-        }
-    }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+        }, {
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
+
 
     db.researchers = sequelize.define('researcher', {
         supporterId: {
@@ -126,30 +127,35 @@ module.exports = function (sequelize, DataTypes) {
         isAdmin: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
+        },
+        isActive: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: true
         }
     }, {
-        hooks: {
-            beforeValidate: function (researcher, options) {
-                if (typeof researcher.supporterId === 'string') {
-                    researcher.supporterId = researcher.supporterId.toLowerCase();
+            hooks: {
+                beforeValidate: function (researcher, options) {
+                    if (typeof researcher.supporterId === 'string') {
+                        researcher.supporterId = researcher.supporterId.toLowerCase();
+                    }
+                }
+            },
+            instanceMethods: {
+                toPublicJSON: function () {
+                    var json = this.toJSON();
+                    return _.pick(json, 'supporterId', 'contactNumber', 'isAdmin');
+                },
+                toPasswordPublicJSON: function () {
+                    var json = this.toJSON();
+                    return _.pick(json, 'supporterId', 'password', 'contactNumber', 'isAdmin');
                 }
             }
-        },
-        instanceMethods: {
-            toPublicJSON: function () {
-                var json = this.toJSON();
-                return _.pick(json, 'supporterId', 'contactNumber', 'isAdmin');
-            },
-            toPasswordPublicJSON: function () {
-                var json = this.toJSON();
-                return _.pick(json, 'supporterId', 'password', 'contactNumber', 'isAdmin');
-            }
-        }
-    }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+        }, {
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
 
     db.researchers.hasMany(db.users);
 
@@ -212,10 +218,10 @@ module.exports = function (sequelize, DataTypes) {
             }
         }
     }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
 
     db.users.hasMany(db.dailyFoodLog);
 
@@ -242,10 +248,10 @@ module.exports = function (sequelize, DataTypes) {
             values: ['yes', 'no']
         }
     }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
 
     db.users.hasMany(db.dailyPhysicalLog);
 
@@ -296,10 +302,10 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: false
         }
     }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
 
     db.users.hasMany(db.weeklyLog);
 
@@ -330,10 +336,10 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: false
         }
     }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
 
     db.users.hasMany(db.appointments);
     db.researchers.hasMany(db.appointments);
@@ -358,20 +364,16 @@ module.exports = function (sequelize, DataTypes) {
             defaultValue: 'no'
         }
     }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
 
     db.users.hasMany(db.notes);
     db.researchers.hasMany(db.notes);
     db.appointments.hasMany(db.notes);
 
     db.notifications = sequelize.define('notifications', {
-        // userId: {
-        //     type: DataTypes.INTEGER,
-        //     autoIncrement: true
-        // },
         notificationId: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
@@ -384,12 +386,20 @@ module.exports = function (sequelize, DataTypes) {
         dateTimeSent: {
             type: DataTypes.DATE,
             allowNull: false
+        },
+        from: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        to: {
+            type: DataTypes.STRING,
+            allowNull: false
         }
     }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
 
     db.users.hasMany(db.notifications);
 
@@ -419,10 +429,10 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: true
         }
     }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
 
     db.users.hasMany(db.userDeviceMapper);
 
@@ -455,10 +465,10 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: true
         }
     }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
 
     db.challenges = sequelize.define('challenges', {
         // userId: {
@@ -479,10 +489,10 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: true
         }
     }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
 
     db.assignChallenges = sequelize.define('assignChallenges', {
         assignChallengesId: {
@@ -503,10 +513,10 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: true
         }
     }, {
-        timestamps: true,
-        createdAt: 'dateCreated',
-        updatedAt: 'dateUpdated'
-    });
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
 
     db.users.hasMany(db.assignChallenges);
     db.researchers.hasMany(db.assignChallenges);

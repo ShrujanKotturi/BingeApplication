@@ -9,8 +9,8 @@ var express = require('express'),
     jwt = require('jsonwebtoken'),
     FCM = require('fcm-node'),
     supporterAuthenticate = require('../middleware/supporterAuthenticate'),
-    config = require('../config.json');
-fcmCli = new FCM(config.SERVER_API_KEY);
+    config = require('../config.json'),
+    fcmCli = new FCM(config.SERVER_API_KEY);
 
 var router = express.Router();
 var db = require('../db');
@@ -226,6 +226,7 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
     });
 });
 
+
 router.post('/logout', function (req, res) {
     var body = _.pick(req.body, 'supporterId');
     console.log(req.session);
@@ -244,39 +245,5 @@ router.post('/logout', function (req, res) {
     res.send();
 });
 
-
-// router.post('/createUser', function(req, res) {
-//
-//     var body = _.pick(req.body, 'userId', 'password', 'age');
-//     if (typeof body.userId !== 'string' || typeof body.password !== 'string' || typeof body.age !== 'number') {
-//         message = {
-//             'name': 'Error',
-//             'message': 'Problem with query parameters'
-//         };
-//         console.log(message);
-//         return res.status(400).send(message);
-//     }
-//     db.app.users.build({
-//         userId: req.body.userId,
-//         password: req.body.password,
-//         age: req.body.age
-//     }).save()
-//         .then(function(savedObject) {
-//             message = {
-//                 'name': "Success",
-//                 'message': "User created successfully",
-//                 'result': util.inspect(savedObject)
-//             };
-//             console.log(message);
-//             res.json(message);
-//         }).catch(function(error) {
-//         message = {
-//             'name': error.name,
-//             'message': util.inspect(error)
-//         };
-//         console.log(error);
-//         res.status(400).json(message);
-//     });
-// });
 
 module.exports = router;
