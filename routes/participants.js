@@ -17,6 +17,7 @@ var message = {},
     session = {};
 
 
+
 router.get('/login', function (req, res) {
     var query = _.pick(req.query, 'userId', 'password', 'deviceId');
     if (typeof query.userId !== 'string' || typeof query.password !== 'string' || typeof query.deviceId !== 'string') {
@@ -32,7 +33,7 @@ router.get('/login', function (req, res) {
             userId: query.userId
         }
     }).then(function (user) {
-        if (!user.dataValues || !bcrypt.compareSync(query.password, user.get('passwordHash'))) {
+        if (_.isEmpty(user.dataValues) || !bcrypt.compareSync(query.password, user.get('passwordHash'))) {
             message = {
                 'name': "Failure",
                 'message': 'Id & Password match not found'
@@ -50,9 +51,9 @@ router.get('/login', function (req, res) {
         //start of userId update with userDeviceMapper
 
         db.app.userDeviceMapper.find({
-            where: {'deviceId': query.deviceId}
+            where: { 'deviceId': query.deviceId }
         }).then(function (userDevice) {
-            if (userDevice) {
+            if (!_.isEmpty(userDevice)) {
                 userDevice.update({
                     userUserId: query.userId
                 }).then(function () {
@@ -108,38 +109,38 @@ router.post('/registerDevice', function (req, res) {
         deviceId: body.deviceId,
         fcmToken: body.fcmToken
     }, {
-        validate: true,
-        fields: {
-            registeredTime: body.registeredTime,
-            deviceId: body.deviceId,
-            fcmToken: body.fcmToken
-        }
-    }).then(function (savedObject) {
-        if (!savedObject) {
+            validate: true,
+            fields: {
+                registeredTime: body.registeredTime,
+                deviceId: body.deviceId,
+                fcmToken: body.fcmToken
+            }
+        }).then(function (savedObject) {
+            if (!savedObject) {
+                message = {
+                    'name': "Failure",
+                    'message': 'Error in registering the device'
+                };
+                return res.status(404).json(message);
+            }
             message = {
-                'name': "Failure",
-                'message': 'Error in registering the device'
+                'name': "Success",
+                'message': "Device registered with Women Health Project",
+                'result': util.inspect(savedObject)
             };
-            return res.status(404).json(message);
-        }
-        message = {
-            'name': "Success",
-            'message': "Device registered with Women Health Project",
-            'result': util.inspect(savedObject)
-        };
-        return res.json(message);
-    }).catch(function (error) {
-        console.log(error);
-        message = {
-            'name': error.name,
-            'message': error.errors[0].message
-        };
-        return res.status(400).json(message);
-    });
+            return res.json(message);
+        }).catch(function (error) {
+            console.log(error);
+            message = {
+                'name': error.name,
+                'message': error.errors[0].message
+            };
+            return res.status(400).json(message);
+        });
 });
 
 router.get('/getDates', userAuthenticate, function (req, res) {
-    var sqlQuery = "SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyFoodLogs WHERE userUserId = '" + res.locals.userId + "' UNION SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyPhysicalLogs WHERE userUserId = '" + res.locals.userId + "'";
+    var sqlQuery = "SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyFoodLogs WHERE userUserId = '" + req.session.userId + "' UNION SELECT DATE(dateTimeLogged) AS LogDateTime FROM dailyPhysicalLogs WHERE userUserId = '" + req.session.userId + "'";
     console.log(sqlQuery);
     var resultsData = {};
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
@@ -147,6 +148,13 @@ router.get('/getDates', userAuthenticate, function (req, res) {
         resultsData.result = results;
         console.log(util.inspect(resultsData));
         return res.json(resultsData);
+    }).catch(function (error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t get dates',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
     });
 });
 
@@ -170,14 +178,14 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
 
     db.app.dailyFoodLog.findOrCreate({
         where: {
-            userUserId: res.locals.userId || req.session.userId,
+            userUserId: req.session.userId,
             foodConsumedLog: body.food,
             feelingBinge: body.binge,
             feelingVomiting: body.vomit,
             dateTimeLogged: body.logDateTime
         },
         defaults: {
-            userUserId: res.locals.userId || req.session.userId,
+            userUserId: req.session.userId,
             foodConsumedLog: body.food,
             latitude: body.latitude,
             longitude: body.longitude,
@@ -198,38 +206,14 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
             'message': 'Food Log created'
         };
         return res.json(message);
+    }).catch(function (error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t create food log',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
     });
-
-    // db.app.dailyFoodLog.build({
-    //     userUserId: body.userId || req.session.userId,
-    //     foodConsumedLog: body.food,
-    //     latitude: body.latitude,
-    //     longitude: body.longitude,
-    //     feelingBinge: body.binge,
-    //     feelingVomiting: body.vomit,
-    //     dateTimeLogged: body.logDateTime
-    // }).save()
-    //     .then(function (savedObject) {
-    //         if (!savedObject) {
-    //             message = {
-    //                 'name': "Failure",
-    //                 'message': 'Error in creating food log'
-    //             }
-    //             return res.status(404).json(message);
-    //         }
-    //         message = {
-    //             'name': "Success",
-    //             'message': "Food log created successfully"
-    //         };
-    //         return res.json(message);
-    //     }).catch(function (error) {
-    //     console.log(error);
-    //     message = {
-    //         'name': error.name,
-    //         'message': error.errors[0].message
-    //     };
-    //     return res.status(400).json(message);
-    // });
 });
 
 router.get('/getFoodLog', userAuthenticate, function (req, res) {
@@ -248,7 +232,7 @@ router.get('/getFoodLog', userAuthenticate, function (req, res) {
     db.app.dailyPhysicalLog.findAll({
         attributes: [['dailyPhysicalLogId', 'Daily Physical Log Id'], ['physicalActivityPerformed', 'Physical Activity Logged'], ['duration', 'Duration'], ['dateTimeLogged', 'Logged Time'], ['feelingTired', 'Feeling Tired']],
         where: {
-            userUserId: res.locals.userId,
+            userUserId: req.session.userId,
             dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
         }
     }).then(function (supporters) {
@@ -266,7 +250,7 @@ router.get('/getFoodLog', userAuthenticate, function (req, res) {
     db.app.dailyFoodLog.findAll({
         attributes: [['dailyFoodLogId', 'Daily Food Log Id'], ['foodConsumedLog', 'Food Consumed'], ['foodConsumedURL', 'Image'], 'latitude', 'longitude', ['dateTimeLogged', 'Logged Time'], ['feelingBinge', 'Feeling Binge'], ['feelingVomiting', 'Feeling Vomiting'], ['returnType', 'Image Type']],
         where: {
-            userUserId: res.locals.userId,
+            userUserId: req.session.userId,
             dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
         }
     }).then(function (supporters) {
@@ -297,7 +281,7 @@ router.post('/updateFoodLog', userAuthenticate, function (req, res) {
 
     db.app.dailyFoodLog.find({
         where: {
-            userUserId: res.locals.userId,
+            userUserId: req.session.userId,
             dailyFoodLogId: body.dailyFoodLogId
         }
     }).then(function (data) {
@@ -339,7 +323,7 @@ router.post('/deleteFoodLog', userAuthenticate, function (req, res) {
 
     db.app.dailyFoodLog.find({
         where: {
-            userUserId: res.locals.userId,
+            userUserId: req.session.userId,
             dailyFoodLogId: body.dailyFoodLogId
         }
     }).then(function (data) {
@@ -394,14 +378,14 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
 
     db.app.dailyFoodLog.findOrCreate({
         where: {
-            userUserId: res.locals.userId || req.session.userId,
+            userUserId: req.session.userId,
             foodConsumedLog: body.food,
             feelingBinge: body.binge,
             feelingVomiting: body.vomit,
             dateTimeLogged: body.logDateTime
         },
         defaults: {
-            userUserId: res.locals.userId || req.session.userId,
+            userUserId: req.session.userId,
             foodConsumedLog: body.food,
             foodConsumedURL: newPath + returnType,
             latitude: body.latitude,
@@ -424,7 +408,15 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
             'message': 'Quick log created successfully'
         };
         return res.json(message);
+    }).catch(function(error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t create quick log',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
     });
+
 
 
     // db.app.dailyFoodLog.findOrCreate({
@@ -472,7 +464,7 @@ router.post('/updateQuickLog', userAuthenticate, function (req, res) {
 
     db.app.dailyFoodLog.find({
         where: {
-            userUserId: res.locals.userId,
+            userUserId: req.session.userId,
             dailyFoodLogId: body.dailyFoodLogId
         }
     }).then(function (data) {
@@ -518,14 +510,14 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
 
     db.app.dailyPhysicalLog.findOrCreate({
         where: {
-            userUserId: res.locals.userId || req.session.userId,
+            userUserId: req.session.userId,
             physicalActivityPerformed: body.physicalActivityPerformed,
             duration: body.duration,
             feelingTired: body.feelingTired,
             dateTimeLogged: body.logDateTime
         },
         defaults: {
-            userUserId: res.locals.userId || req.session.userId,
+            userUserId: req.session.userId,
             physicalActivityPerformed: body.physicalActivityPerformed,
             duration: body.duration,
             feelingTired: body.feelingTired,
@@ -544,7 +536,15 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
             'message': 'Physical Log created'
         };
         return res.json(message);
+    }).catch(function(error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t create physical log',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
     });
+
 });
 
 router.post('/updatePhysicalLog', userAuthenticate, function (req, res) {
@@ -562,7 +562,7 @@ router.post('/updatePhysicalLog', userAuthenticate, function (req, res) {
 
     db.app.dailyPhysicalLog.find({
         where: {
-            userUserId: res.locals.userId,
+            userUserId: req.session.userId,
             dailyPhysicalLogId: body.dailyPhysicalLogId
         }
     }).then(function (data) {
@@ -603,7 +603,7 @@ router.post('/deletePhysicalLog', userAuthenticate, function (req, res) {
 
     db.app.dailyPhysicalLog.find({
         where: {
-            userUserId: res.locals.userId,
+            userUserId: req.session.userId,
             dailyPhysicalLogId: body.dailyPhysicalLogId
         }
     }).then(function (data) {
@@ -640,7 +640,7 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
 
     db.app.weeklyLog.findOrCreate({
         where: {
-            userUserId: res.locals.userId || req.session.userId,
+            userUserId: req.session.userId,
             weekId: body.weekId,
             binges: body.binges,
             goodDays: body.goodDays,
@@ -652,7 +652,7 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
             dateAdded: body.logDateTime
         },
         defaults: {
-            userUserId: res.locals.userId || req.session.userId,
+            userUserId: req.session.userId,
             weekId: body.weekId,
             binges: body.binges,
             goodDays: body.goodDays,
@@ -676,7 +676,15 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
             'message': 'Weekly Log created'
         };
         return res.json(message);
+    }).catch(function(error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t create weekly log',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
     });
+
 
 });
 
@@ -685,7 +693,7 @@ router.get('/getWeeklyLog', userAuthenticate, function (req, res) {
     db.app.weeklyLog.findAll({
         attributes: [['weeklyLogId', 'Weekly Log Id'], ['WeekId', 'Week Id'], ['binges', 'Number of Binges'], ['goodDays', 'No. of good days'], ['weight', 'Weight'], ['V', 'V'], ['L', 'L'], ['D', 'D'], ['events', 'Events'], ['dateAdded', 'Date Logged for']],
         where: {
-            userUserId: res.locals.userId
+            userUserId: req.session.userId
             // dateAdded: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateAdded')), '=', query.date)
         }
     }).then(function (supporters) {
@@ -716,7 +724,7 @@ router.post('/updateWeeklyLog', userAuthenticate, function (req, res) {
 
     db.app.weeklyLog.find({
         where: {
-            userUserId: res.locals.userId,
+            userUserId: req.session.userId,
             weeklyLogId: body.weeklyLogId
         }
     }).then(function (data) {
@@ -760,7 +768,7 @@ router.post('/deleteWeeklyLog', userAuthenticate, function (req, res) {
 
     db.app.weeklyLog.find({
         where: {
-            userUserId: res.locals.userId,
+            userUserId: req.session.userId,
             weeklyLogId: body.weeklyLogId
         }
     }).then(function (data) {

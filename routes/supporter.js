@@ -33,7 +33,7 @@ router.get('/login', function(req, res) {
             supporterId: query.supporterId
         }
     }).then(function(supporter) {
-        if (!supporter.dataValues || !bcrypt.compareSync(query.password, supporter.get('passwordHash'))) {
+        if (_.isEmpty(supporter.dataValues) || !bcrypt.compareSync(query.password, supporter.get('passwordHash'))) {
             message = {
                 'name': "Failure",
                 'message': 'Id & Password match not found'
@@ -211,7 +211,7 @@ router.post('/makeAppointment', supporterAuthenticate, function(req, res) {
             researcherSupporterId: req.session.supporterId
         }
     }).spread(function(foodLog, created) {
-        if (!created) {
+        if (!created || _.isEmpty(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Appointment already exists with the same date time'
@@ -223,10 +223,20 @@ router.post('/makeAppointment', supporterAuthenticate, function(req, res) {
             'message': 'Appointment created'
         };
         return res.json(message);
+    }).catch(function(error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t create appointment',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
     });
+
 });
 
 router.post('/messagesToUser', supporterAuthenticate, function(req, res) {
+
+
     var body = _.pick(req.body, 'message', 'dateTimeSent', 'to', 'userId');
     console.log(req.session);
     if (typeof body.message !== 'string' || typeof body.dateTimeSent !== 'string' || typeof body.to !== 'string' || typeof body.userId !== 'string') {
@@ -245,7 +255,7 @@ router.post('/messagesToUser', supporterAuthenticate, function(req, res) {
             isActive: true
         }
     }).then(function(user) {
-        if (user) {
+        if (!_.isEmpty(user)) {
             console.log('if: ' + user.dataValues.Permission);
             if (user.dataValues.Permission === 1) {
                 db.app.notifications.findOrCreate({
@@ -312,7 +322,15 @@ router.post('/messagesToUser', supporterAuthenticate, function(req, res) {
                     });
 
                     return res.json(message);
+                }).catch(function(error) {
+                    message = {
+                        'name': 'Failure',
+                        'message': 'A message already exists with given data, couldn\'t send a notification',
+                        'error': util.inspect(error)
+                    };
+                    return res.status(400).send(message);
                 });
+
             } else {
                 message.name = 'Failure';
                 message.message = "Not authorized to send Messages to the Participant";

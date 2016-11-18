@@ -84,32 +84,52 @@ router.post('/createUser', adminAuthenticate, function(req, res) {
         console.log(message);
         return res.status(400).send(message);
     }
-    db.app.users.build({
-        userId: body.userId,
-        password: body.password,
-        age: body.age,
-        researcherSupporterId: body.supporterId,
-        logNotification: body.logNotification,
-        appNotification: body.appNotification,
-        quickLog: body.quickLog,
-        sendMotivationalMessages: body.motivationalMessages
-    }).save()
-        .then(function(savedObject) {
+
+    db.app.users.findOrCreate({
+        where: {
+            userId: body.userId,
+            passwordHash: bcrypt.hashSync(body.password, bcrypt.genSaltSync(10)),
+            age: body.age,
+            researcherSupporterId: body.supporterId,
+            logNotifications: body.logNotification,
+            appNotifications: body.appNotification,
+            quickLog: body.quickLog,
+            sendMotivationalMessages: body.motivationalMessages
+        },
+        defaults: {
+            userId: body.userId,
+            password: body.password,
+            age: body.age,
+            researcherSupporterId: body.supporterId,
+            logNotifications: body.logNotification,
+            appNotifications: body.appNotification,
+            quickLog: body.quickLog,
+            sendMotivationalMessages: body.motivationalMessages
+        }
+    }).spread(function(savedObject, created) {
+        if (!created) {
             message = {
-                'name': "Success",
-                'message': "User created successfully",
-                'result': savedObject.toPublicJSON()
+                'name': 'Failure',
+                'message': 'Couldn\'t create user'
             };
-            console.log(message);
             return res.json(message);
-        }).catch(function(error) {
-            message = {
-                'name': error.name,
-                'message': util.inspect(error)
-            };
-            console.log(error);
-            return res.status(400).json(message);
-        });
+        }
+        message = {
+            'name': "Success",
+            'message': "User created successfully",
+            'result': savedObject.toPublicJSON()
+        };
+        console.log(message);
+        return res.json(message);
+    }).catch(function(error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t create user',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
+    });
+
 });
 
 router.post('/createSupporter', adminAuthenticate, function(req, res) {
@@ -124,28 +144,43 @@ router.post('/createSupporter', adminAuthenticate, function(req, res) {
         return res.status(400).send(message);
     }
 
-    db.app.researchers.build({
-        supporterId: body.supporterId,
-        password: body.password,
-        contactNumber: body.contactNumber,
-        isAdmin: false
-    }).save()
-        .then(function(savedObject) {
+    db.app.researchers.findOrCreate({
+        where: {
+            supporterId: body.supporterId,
+            passwordHash: bcrypt.hashSync(body.password, bcrypt.genSaltSync(10)),
+            contactNumber: body.contactNumber,
+            isAdmin: false
+
+        },
+        defaults: {
+            supporterId: body.supporterId,
+            password: body.password,
+            contactNumber: body.contactNumber,
+            isAdmin: false
+        }
+    }).spread(function(savedObject, created) {
+        if (!created) {
             message = {
-                'name': "Success",
-                'message': "Supporter created successfully",
-                'result': savedObject.toPublicJSON()
+                'name': 'Failure',
+                'message': 'Couldn\'t create supporter'
             };
-            console.log(message);
             return res.json(message);
-        }).catch(function(error) {
-            console.log(error);
-            message = {
-                'name': error.name,
-                'message': error.message
-            };
-            return res.status(400).json(message);
-        });
+        }
+        message = {
+            'name': "Success",
+            'message': "Supporter created successfully",
+            'result': savedObject.toPublicJSON()
+        };
+        console.log(message);
+        return res.json(message);
+    }).catch(function(error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t create supporter',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
+    });
 });
 
 router.get('/getAllSupporters', adminAuthenticate, function(req, res) {
