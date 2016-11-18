@@ -239,7 +239,7 @@ router.post('/messagesToUser', supporterAuthenticate, function(req, res) {
     }
 
     db.app.users.findOne({
-        attributes: [['appNotifications', 'Permission']],
+        attributes: [['sendMotivationalMessages', 'Permission']],
         where: {
             userId: body.userId,
             isActive: true
@@ -345,7 +345,8 @@ router.post('/logout', function(req, res) {
         return res.status(400).send(message);
     }
 
-    req.session.supporterId = null;
+    //req.session.supporterId = null;
+    req.session.destroy();
     //res.redirect()
     console.log(req.session);
     res.send();

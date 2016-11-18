@@ -16,6 +16,7 @@ var db = require('../db');
 var message = {},
     session = {};
 
+
 router.get('/login', function (req, res) {
     var query = _.pick(req.query, 'userId', 'password', 'deviceId');
     if (typeof query.userId !== 'string' || typeof query.password !== 'string' || typeof query.deviceId !== 'string') {
@@ -499,6 +500,7 @@ router.post('/updateQuickLog', userAuthenticate, function (req, res) {
         }
     });
 });
+
 
 //Physical Log
 router.post('/physicalLog', userAuthenticate, function (req, res) {
