@@ -234,9 +234,8 @@ router.post('/makeAppointment', supporterAuthenticate, function(req, res) {
 
 });
 
+//Messages
 router.post('/messagesToUser', supporterAuthenticate, function(req, res) {
-
-
     var body = _.pick(req.body, 'message', 'dateTimeSent', 'to', 'userId');
     console.log(req.session);
     if (typeof body.message !== 'string' || typeof body.dateTimeSent !== 'string' || typeof body.to !== 'string' || typeof body.userId !== 'string') {
@@ -339,6 +338,41 @@ router.post('/messagesToUser', supporterAuthenticate, function(req, res) {
         } else {
             message.name = 'Failure';
             message.message = "User doesn't exists/User isn't active";
+            return res.status(404).send(message);
+        }
+    }).catch(function(error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.get('/getAllMessages', supporterAuthenticate, function(req, res) {
+    var query = _.pick(req.query, 'userId');
+    console.log(req.session);
+    if (typeof query.userId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.notifications.findOne({
+        attributes: [['notificationId', 'Id'], ['notificationMessage', 'Message'], ['dateTimeSent', 'dateTimeSent'], ['from', 'from']],
+        where: {
+            to: query.userId
+        }
+    }).then(function(notifications) {
+        if (!_.isEmpty(notifications)) {
+            return res.json(notifications);
+        } else {
+            message.name = 'Failure';
+            message.message = 'There are no messages for the user';
             return res.status(404).send(message);
         }
     }).catch(function(error) {
