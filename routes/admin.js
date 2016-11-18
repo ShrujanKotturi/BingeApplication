@@ -573,7 +573,7 @@ router.get('/getAllParticipantAppointments', adminAuthenticate, function (req, r
 router.post('/deleteAppointment', adminAuthenticate, function (req, res) {
     console.log(req.session);
     var body = _.pick(req.body, 'appointmentId');
-
+    console.log(typeof body.appointmentId);
     if (typeof body.appointmentId !== 'string') {
         message = {
             'name': 'Error',

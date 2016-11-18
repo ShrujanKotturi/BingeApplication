@@ -457,26 +457,7 @@ router.get('/getAllParticipantAppointments', supporterAuthenticate, function (re
     });
 });
 
-router.post('/logout', function (req, res) {
-    var body = _.pick(req.body, 'supporterId');
-    console.log(req.session);
-    if (typeof body.supporterId !== 'string') {
-        message = {
-            'name': 'Error',
-            'message': 'Problem with query parameters'
-        };
-        console.log(message);
-        return res.status(400).send(message);
-    }
-
-    //req.session.supporterId = null;
-    req.session.destroy();
-    //res.redirect()
-    console.log(req.session);
-    res.send();
-});
-
-router.post('/deleteAppointment', adminAuthenticate, function (req, res) {
+router.post('/deleteAppointment', supporterAuthenticate, function (req, res) {
     console.log(req.session);
     var body = _.pick(req.body, 'appointmentId');
 
@@ -513,6 +494,49 @@ router.post('/deleteAppointment', adminAuthenticate, function (req, res) {
         console.log(error);
         return res.status(400).json(message);
     });
+});
+
+router.get('/getAllNotifications', supporterAuthenticate, function (req, res) {
+    db.app.notifications.findAll({
+        attributes: [['notificationId', 'Id'], ['notificationMessage', 'Message'], ['dateTimeSent', 'dateTimeSent'], ['from', 'from']],
+        where: {
+            to: req.session.supporterId
+        }
+    }).then(function (notifications) {
+        if (!_.isEmpty(notifications)) {
+            return res.json(notifications);
+        } else {
+            message.name = 'Failure';
+            message.message = 'There are no messages for the user';
+            return res.status(404).send(message);
+        }
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.post('/logout', function (req, res) {
+    var body = _.pick(req.body, 'supporterId');
+    console.log(req.session);
+    if (typeof body.supporterId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    //req.session.supporterId = null;
+    req.session.destroy();
+    //res.redirect()
+    console.log(req.session);
+    res.send();
 });
 
 module.exports = router;
