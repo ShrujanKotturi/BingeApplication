@@ -17,7 +17,7 @@ var db = require('../db');
 var message = {};
 
 
-router.get('/login', function (req, res) {
+router.get('/login', function(req, res) {
     var query = _.pick(req.query, 'supporterId', 'password');
     if (typeof query.supporterId !== 'string' || typeof query.password !== 'string') {
         message = {
@@ -32,7 +32,7 @@ router.get('/login', function (req, res) {
         where: {
             supporterId: query.supporterId
         }
-    }).then(function (supporter) {
+    }).then(function(supporter) {
         if (!supporter.dataValues || !bcrypt.compareSync(query.password, supporter.get('passwordHash'))) {
             message = {
                 'name': "Failure",
@@ -63,7 +63,7 @@ router.get('/login', function (req, res) {
         }
         else
             return res.status(400).send();
-    }).catch(function (error) {
+    }).catch(function(error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -73,7 +73,7 @@ router.get('/login', function (req, res) {
     });
 });
 
-router.get('/getAllUsers', supporterAuthenticate, function (req, res) {
+router.get('/getAllUsers', supporterAuthenticate, function(req, res) {
     console.log(req.session);
 
     db.app.users.findAll({
@@ -82,9 +82,9 @@ router.get('/getAllUsers', supporterAuthenticate, function (req, res) {
             researcherSupporterId: req.session.supporterId,
             isActive: true
         }
-    }).then(function (supporters) {
+    }).then(function(supporters) {
         res.json(supporters);
-    }).catch(function (error) {
+    }).catch(function(error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -94,7 +94,7 @@ router.get('/getAllUsers', supporterAuthenticate, function (req, res) {
     });
 });
 
-router.get('/getUserFoodLog', supporterAuthenticate, function (req, res) {
+router.get('/getUserFoodLog', supporterAuthenticate, function(req, res) {
     var query = _.pick(req.query, 'userId');
     console.log(req.session);
     if (typeof query.userId !== 'string') {
@@ -111,9 +111,9 @@ router.get('/getUserFoodLog', supporterAuthenticate, function (req, res) {
         where: {
             userUserId: query.userId
         }
-    }).then(function (supporters) {
+    }).then(function(supporters) {
         return res.json(supporters);
-    }).catch(function (error) {
+    }).catch(function(error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -123,7 +123,7 @@ router.get('/getUserFoodLog', supporterAuthenticate, function (req, res) {
     });
 });
 
-router.get('/getUserWeeklyLog', supporterAuthenticate, function (req, res) {
+router.get('/getUserWeeklyLog', supporterAuthenticate, function(req, res) {
     var query = _.pick(req.query, 'userId');
     console.log(req.session);
     if (typeof query.userId !== 'string') {
@@ -140,9 +140,9 @@ router.get('/getUserWeeklyLog', supporterAuthenticate, function (req, res) {
         where: {
             userUserId: query.userId
         }
-    }).then(function (supporters) {
+    }).then(function(supporters) {
         return res.json(supporters);
-    }).catch(function (error) {
+    }).catch(function(error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -152,7 +152,7 @@ router.get('/getUserWeeklyLog', supporterAuthenticate, function (req, res) {
     });
 });
 
-router.get('/getUserPhysicalLog', supporterAuthenticate, function (req, res) {
+router.get('/getUserPhysicalLog', supporterAuthenticate, function(req, res) {
     var query = _.pick(req.query, 'userId');
     console.log(req.session);
     if (typeof query.userId !== 'string') {
@@ -169,9 +169,9 @@ router.get('/getUserPhysicalLog', supporterAuthenticate, function (req, res) {
         where: {
             userUserId: query.userId
         }
-    }).then(function (supporters) {
+    }).then(function(supporters) {
         res.json(supporters);
-    }).catch(function (error) {
+    }).catch(function(error) {
         message = {
             'name': error.name,
             'message': util.inspect(error)
@@ -181,7 +181,7 @@ router.get('/getUserPhysicalLog', supporterAuthenticate, function (req, res) {
     });
 });
 
-router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
+router.post('/makeAppointment', supporterAuthenticate, function(req, res) {
     var body = _.pick(req.body, 'appointmentTime', 'title', 'comments', 'createdOn', 'userId');
     console.log(req.session);
     if (typeof body.appointmentTime !== 'string' || typeof body.title !== 'string' || typeof body.comments !== 'string' || typeof body.createdOn !== 'string' || typeof body.userId !== 'string') {
@@ -210,7 +210,7 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
             createdOn: body.createdOn,
             researcherSupporterId: req.session.supporterId
         }
-    }).spread(function (foodLog, created) {
+    }).spread(function(foodLog, created) {
         if (!created) {
             message = {
                 'name': 'Failure',
@@ -226,8 +226,114 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
     });
 });
 
+router.post('/messagesToUser', supporterAuthenticate, function(req, res) {
+    var body = _.pick(req.body, 'message', 'dateTimeSent', 'to', 'userId');
+    console.log(req.session);
+    if (typeof body.message !== 'string' || typeof body.dateTimeSent !== 'string' || typeof body.to !== 'string' || typeof body.userId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
 
-router.post('/logout', function (req, res) {
+    db.app.users.findOne({
+        attributes: [['appNotifications', 'Permission']],
+        where: {
+            userId: body.userId,
+            isActive: true
+        }
+    }).then(function(user) {
+        if (user) {
+            console.log('if: ' + user.dataValues.Permission);
+            if (user.dataValues.Permission === 1) {
+                db.app.notifications.findOrCreate({
+                    where: {
+                        userUserId: body.userId,
+                        notificationMessage: body.message,
+                        dateTimeSent: body.dateTimeSent,
+                        from: req.session.supporterId,
+                        to: body.to
+                    },
+                    defaults: {
+                        userUserId: body.userId,
+                        notificationMessage: body.message,
+                        dateTimeSent: body.dateTimeSent,
+                        from: req.session.supporterId,
+                        to: body.to
+                    }
+                }).spread(function(notification, created) {
+                    if (!created) {
+                        message = {
+                            'name': 'Failure',
+                            'message': 'A message already exists with given data, couldn\'t send a notification'
+                        };
+                        return res.status(401).json(message);
+                    }
+                    message = {
+                        'name': 'Success',
+                        'message': 'Message log to the table'
+                    };
+
+                    db.app.userDeviceMapper.findOne({
+                        attributes: [['fcmToken', 'Token']],
+                        where: {
+                            userUserId: body.userId
+                        }
+                    }).then(function(deviceMapper) {
+                        if (deviceMapper) {
+                            var payloadOk = {
+                                to: deviceMapper.dataValues.Token,
+                                priority: 'high',
+                                notification: {
+                                    title: 'Women Health Project',
+                                    body: body.message
+                                }
+                            };
+                            fcmCli.send(payloadOk, function(err, result) {
+                                if (err) {
+                                    console.error(err)
+                                } else {
+                                    console.log(result);
+                                    message.fcm = 'Message in-transit';
+                                    message.result = result;
+                                }
+                            });
+
+                        } else {
+                            message.mapperError = 'Couldn\'t find the Device Token associated with the User';
+                        }
+                    }).catch(function(error) {
+                        message.error = error.name;
+                        message.error_message = util.inspect(error);
+                        console.log(error);
+                        return res.status(400).json(message);
+                    });
+
+                    return res.json(message);
+                });
+            } else {
+                message.name = 'Failure';
+                message.message = "Not authorized to send Messages to the Participant";
+                return res.status(401).send(message);
+            }
+        } else {
+            message.name = 'Failure';
+            message.message = "User doesn't exists/User isn't active";
+            return res.status(404).send(message);
+        }
+    }).catch(function(error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.post('/logout', function(req, res) {
     var body = _.pick(req.body, 'supporterId');
     console.log(req.session);
     if (typeof body.supporterId !== 'string') {
