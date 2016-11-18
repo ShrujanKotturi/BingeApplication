@@ -790,43 +790,5 @@ router.post('/deleteWeeklyLog', userAuthenticate, function (req, res) {
     });
 });
 
-router.post('/deleteAppointment', adminAuthenticate, function (req, res) {
-    console.log(req.session);
-    var body = _.pick(req.body, 'appointmentId');
-
-    if (typeof body.appointmentId !== 'string') {
-        message = {
-            'name': 'Error',
-            'message': 'Problem with query parameters'
-        };
-        return res.status(400).send(message);
-    }
-
-    db.app.appointments.find({
-        where: {
-            appointmentId: body.appointmentId,
-            researcherSupporterId: req.session.supporterId
-        }
-    }).then(function (data) {
-        if (!_.isEmpty(data)) {
-            data.destroy();
-            message.name = 'Success';
-            message.message = 'Appointment deleted';
-            return res.json(message);
-        }
-        else {
-            message.name = 'Failure';
-            message.message = 'Could\'t find the appointment';
-            return res.json(message);
-        }
-    }).catch(function (error) {
-        message = {
-            'name': error.name,
-            'message': util.inspect(error)
-        };
-        console.log(error);
-        return res.status(400).json(message);
-    });
-});
 
 module.exports = router;
