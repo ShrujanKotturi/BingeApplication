@@ -223,7 +223,7 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
             researcherSupporterId: req.session.supporterId
         }
     }).spread(function (foodLog, created) {
-        if (_.isEmpty(created)) {
+        if (!(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Appointment already exists with the same date time'

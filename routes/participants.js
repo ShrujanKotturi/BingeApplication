@@ -163,9 +163,9 @@ router.get('/getDates', userAuthenticate, function (req, res) {
 router.post('/foodLog', userAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
     body.logDateTime = new Date(body.logDateTime).toISOString();
-    console.log(__dirname);
-    __dirname = __dirname.substring(0, __dirname.indexOf("\\routes")) + '\\images';
-    console.log(__dirname);
+    // console.log(__dirname);
+    // __dirname = __dirname.substring(0, __dirname.indexOf("\\routes")) + '\\images';
+    // console.log(__dirname);
     if (typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.logDateTime !== 'string') {
         message = {
             'name': 'Error',
@@ -194,17 +194,54 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
             dateTimeLogged: body.logDateTime
         }
     }).spread(function (foodLog, created) {
-        if (_.isEmpty(created)) {
+        if (!created) {
             message = {
                 'name': 'Failure',
                 'message': 'Food Log with the given details exists'
             };
-            return res.json(message);
+            return res.status(403).json(message);
         }
         message = {
             'name': 'Success',
             'message': 'Food Log created'
         };
+
+        //Add entry to notification table - for the supporter
+        var params = {};
+
+        params.userId = req.session.userId;
+        params.message = "Food log logged";
+        params.dateTimeSent = new Date().toISOString();
+        params.to = res.locals.supporterId;
+        params.from = req.session.userId;
+
+        db.app.notifications.findOrCreate({
+            where: {
+                userUserId: params.userId,
+                notificationMessage: params.message,
+                dateTimeSent: params.dateTimeSent,
+                from: params.from,
+                to: params.to
+            },
+            defaults: {
+                userUserId: params.userId,
+                notificationMessage: params.message,
+                dateTimeSent: params.dateTimeSent,
+                from: params.from,
+                to: params.to
+            }
+        }).spread(function (notification, created) {
+            if (!created)
+                message.logMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+            else
+                message.logMessage = 'Message log to the table';
+        }).catch(function (error) {
+            message.logMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+            message.error = util.inspect(error);
+        });
+
+        //end of notification logging
+
         return res.json(message);
     }).catch(function (error) {
         message = {
@@ -296,6 +333,44 @@ router.post('/updateFoodLog', userAuthenticate, function (req, res) {
                 message.name = 'Success';
                 message.message = 'Update to food log successful';
                 message.data = data1;
+
+                //Add entry to notification table - for the supporter
+                var params = {};
+
+                params.userId = req.session.userId;
+                params.message = "Food log updated";
+                params.dateTimeSent = new Date().toISOString();
+                params.to = res.locals.supporterId;
+                params.from = req.session.userId;
+
+                db.app.notifications.findOrCreate({
+                    where: {
+                        userUserId: params.userId,
+                        notificationMessage: params.message,
+                        dateTimeSent: params.dateTimeSent,
+                        from: params.from,
+                        to: params.to
+                    },
+                    defaults: {
+                        userUserId: params.userId,
+                        notificationMessage: params.message,
+                        dateTimeSent: params.dateTimeSent,
+                        from: params.from,
+                        to: params.to
+                    }
+                }).spread(function (notification, created) {
+                    if (!created)
+                        message.logMessage = 'A message already exists with given data, couldn\'t send a notification on update foodlog to the supporter';
+                    else
+                        message.logMessage = 'Message log to the table';
+                }).catch(function (error) {
+                    message.logMessage = 'A message already exists with given data, couldn\'t send a notification on update foodlog to the supporter';
+                    message.error = util.inspect(error);
+                });
+
+                //end of notification logging
+
+
                 return res.json(message);
             }).catch(function (error) {
                 console.error('Error in updating the user device : ' + error);
@@ -328,7 +403,47 @@ router.post('/deleteFoodLog', userAuthenticate, function (req, res) {
         if (!_.isEmpty(data)) {
             data.destroy();
             message.name = 'Success';
-            message.message = 'Daily log deleted';
+            message.message = 'Food log deleted';
+
+
+            //Add entry to notification table - for the supporter
+            var params = {};
+
+            params.userId = req.session.userId;
+            params.message = "Food log deleted";
+            params.dateTimeSent = new Date().toISOString();
+            params.to = res.locals.supporterId;
+            params.from = req.session.userId;
+
+            db.app.notifications.findOrCreate({
+                where: {
+                    userUserId: params.userId,
+                    notificationMessage: params.message,
+                    dateTimeSent: params.dateTimeSent,
+                    from: params.from,
+                    to: params.to
+                },
+                defaults: {
+                    userUserId: params.userId,
+                    notificationMessage: params.message,
+                    dateTimeSent: params.dateTimeSent,
+                    from: params.from,
+                    to: params.to
+                }
+            }).spread(function (notification, created) {
+                if (!created)
+                    message.logMessage = 'A message already exists with given data, couldn\'t send a notification on delete foodlog to the supporter';
+                else
+                    message.logMessage = 'Message log to the table';
+            }).catch(function (error) {
+                message.logMessage = 'A message already exists with given data, couldn\'t send a notification on delete foodlog to the supporter';
+                message.error = util.inspect(error);
+            });
+
+            //end of notification logging
+
+
+
             return res.json(message);
         } else {
             message.name = 'Failure';
@@ -394,7 +509,7 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
             returnType: body.returnType
         }
     }).spread(function (foodLog, created) {
-        if (_.isEmpty(created)) {
+        if (!(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Error in creating quick log'
@@ -405,6 +520,43 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
             'name': 'Success',
             'message': 'Quick log created successfully'
         };
+
+        //Add entry to notification table - for the supporter
+        var params = {};
+
+        params.userId = req.session.userId;
+        params.message = "Quick food log logged";
+        params.dateTimeSent = new Date().toISOString();
+        params.to = res.locals.supporterId;
+        params.from = req.session.userId;
+
+        db.app.notifications.findOrCreate({
+            where: {
+                userUserId: params.userId,
+                notificationMessage: params.message,
+                dateTimeSent: params.dateTimeSent,
+                from: params.from,
+                to: params.to
+            },
+            defaults: {
+                userUserId: params.userId,
+                notificationMessage: params.message,
+                dateTimeSent: params.dateTimeSent,
+                from: params.from,
+                to: params.to
+            }
+        }).spread(function (notification, created) {
+            if (!created)
+                message.quickLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+            else
+                message.quickLogMessage = 'Message log to the table';
+        }).catch(function (error) {
+            message.quickLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+            message.error = util.inspect(error);
+        });
+
+        //end of notification logging
+
         return res.json(message);
     }).catch(function (error) {
         message = {
@@ -415,39 +567,9 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
         return res.status(400).send(message);
     });
 
-
-
-    // db.app.dailyFoodLog.findOrCreate({
-    //     userUserId: res.locals.userId || req.session.userId,
-    //     foodConsumedLog: req.body.food,
-    //     foodConsumedURL: newPath + returnType,
-    //     latitude: req.body.latitude,
-    //     longitude: req.body.longitude,
-    //     feelingBinge: req.body.binge,
-    //     feelingVomiting: req.body.vomit,
-    //     dateTimeLogged: body.logDateTime,
-    //     returnType: body.returnType
-    // }).save()
-    //     .then(function (savedObject) {
-    //         if (!savedObject) {
-    //             message.name = "Failure";
-    //             message.message = 'Error in creating quick log';
-    //             return res.status(404).json(message);
-    //         }
-    //         message.name = "Success";
-    //         message.message = 'Quick log created successfully';
-    //         return res.json(message);
-    //     }).catch(function (error) {
-    //     console.log(error);
-    //     message = {
-    //         'name': error.name,
-    //         'message': error.errors[0].message
-    //     };
-    //
-    //     return res.status(400).json(message);
-    // });
 });
 
+//add to the notification table about update to the quick log
 router.post('/updateQuickLog', userAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'dailyFoodLogId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
     body.logDateTime = new Date(body.logDateTime).toISOString();
@@ -522,7 +644,7 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
             dateTimeLogged: body.logDateTime
         }
     }).spread(function (foodLog, created) {
-        if (_.isEmpty(created)) {
+        if (!(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Physical Log with the given details exists'
@@ -533,6 +655,43 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
             'name': 'Success',
             'message': 'Physical Log created'
         };
+
+        //Add entry to notification table - for the supporter
+        var params = {};
+
+        params.userId = req.session.userId;
+        params.message = "Physical log logged";
+        params.dateTimeSent = new Date().toISOString();
+        params.to = res.locals.supporterId;
+        params.from = req.session.userId;
+
+        db.app.notifications.findOrCreate({
+            where: {
+                userUserId: params.userId,
+                notificationMessage: params.message,
+                dateTimeSent: params.dateTimeSent,
+                from: params.from,
+                to: params.to
+            },
+            defaults: {
+                userUserId: params.userId,
+                notificationMessage: params.message,
+                dateTimeSent: params.dateTimeSent,
+                from: params.from,
+                to: params.to
+            }
+        }).spread(function (notification, created) {
+            if (!created)
+                message.physicalLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+            else
+                message.physicalLogMessage = 'Message log to the table';
+        }).catch(function (error) {
+            message.physicalLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+            message.error = util.inspect(error);
+        });
+
+        //end of notification logging
+
         return res.json(message);
     }).catch(function (error) {
         message = {
@@ -575,6 +734,44 @@ router.post('/updatePhysicalLog', userAuthenticate, function (req, res) {
                 message.name = 'Success';
                 message.message = 'Update to Physical log successful';
                 message.data = data1;
+
+                //Add entry to notification table - for the supporter
+                var params = {};
+
+                params.userId = req.session.userId;
+                params.message = "Physical log updated";
+                params.dateTimeSent = new Date().toISOString();
+                params.to = res.locals.supporterId;
+                params.from = req.session.userId;
+
+                db.app.notifications.findOrCreate({
+                    where: {
+                        userUserId: params.userId,
+                        notificationMessage: params.message,
+                        dateTimeSent: params.dateTimeSent,
+                        from: params.from,
+                        to: params.to
+                    },
+                    defaults: {
+                        userUserId: params.userId,
+                        notificationMessage: params.message,
+                        dateTimeSent: params.dateTimeSent,
+                        from: params.from,
+                        to: params.to
+                    }
+                }).spread(function (notification, created) {
+                    if (!created)
+                        message.physicalLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+                    else
+                        message.physicalLogMessage = 'Message log to the table';
+                }).catch(function (error) {
+                    message.physicalLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+                    message.error = util.inspect(error);
+                });
+
+                //end of notification logging
+
+
                 return res.json(message);
             }).catch(function (error) {
                 console.error('Error in updating the user device : ' + error);
@@ -609,6 +806,43 @@ router.post('/deletePhysicalLog', userAuthenticate, function (req, res) {
             data.destroy();
             message.name = 'Success';
             message.message = 'Physical log deleted';
+
+            //Add entry to notification table - for the supporter
+            var params = {};
+
+            params.userId = req.session.userId;
+            params.message = "Physical log deleted";
+            params.dateTimeSent = new Date().toISOString();
+            params.to = res.locals.supporterId;
+            params.from = req.session.userId;
+
+            db.app.notifications.findOrCreate({
+                where: {
+                    userUserId: params.userId,
+                    notificationMessage: params.message,
+                    dateTimeSent: params.dateTimeSent,
+                    from: params.from,
+                    to: params.to
+                },
+                defaults: {
+                    userUserId: params.userId,
+                    notificationMessage: params.message,
+                    dateTimeSent: params.dateTimeSent,
+                    from: params.from,
+                    to: params.to
+                }
+            }).spread(function (notification, created) {
+                if (!created)
+                    message.physicalLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+                else
+                    message.physicalLogMessage = 'Message log to the table';
+            }).catch(function (error) {
+                message.physicalLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+                message.error = util.inspect(error);
+            });
+
+            //end of notification logging
+
             return res.json(message);
         } else {
             message.name = 'Failure';
@@ -662,7 +896,7 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
             dateAdded: body.logDateTime
         }
     }).spread(function (foodLog, created) {
-        if (_.isEmpty(created)) {
+        if (!(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Weekly Log with the given details exists'
@@ -673,6 +907,44 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
             'name': 'Success',
             'message': 'Weekly Log created'
         };
+
+        //Add entry to notification table - for the supporter
+        var params = {};
+
+        params.userId = req.session.userId;
+        params.message = "Weekly log logged";
+        params.dateTimeSent = new Date().toISOString();
+        params.to = res.locals.supporterId;
+        params.from = req.session.userId;
+
+        db.app.notifications.findOrCreate({
+            where: {
+                userUserId: params.userId,
+                notificationMessage: params.message,
+                dateTimeSent: params.dateTimeSent,
+                from: params.from,
+                to: params.to
+            },
+            defaults: {
+                userUserId: params.userId,
+                notificationMessage: params.message,
+                dateTimeSent: params.dateTimeSent,
+                from: params.from,
+                to: params.to
+            }
+        }).spread(function (notification, created) {
+            if (!created)
+                message.weeklyLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+            else
+                message.weeklyLogMessage = 'Message log to the table';
+        }).catch(function (error) {
+            message.weeklyLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+            message.error = util.inspect(error);
+        });
+
+        //end of notification logging
+
+
         return res.json(message);
     }).catch(function (error) {
         message = {
@@ -744,6 +1016,43 @@ router.post('/updateWeeklyLog', userAuthenticate, function (req, res) {
                 message.name = 'Success';
                 message.message = 'Update to Weekly log successful';
                 message.data = data1;
+
+                //Add entry to notification table - for the supporter
+                var params = {};
+
+                params.userId = req.session.userId;
+                params.message = "Weekly log updated";
+                params.dateTimeSent = new Date().toISOString();
+                params.to = res.locals.supporterId;
+                params.from = req.session.userId;
+
+                db.app.notifications.findOrCreate({
+                    where: {
+                        userUserId: params.userId,
+                        notificationMessage: params.message,
+                        dateTimeSent: params.dateTimeSent,
+                        from: params.from,
+                        to: params.to
+                    },
+                    defaults: {
+                        userUserId: params.userId,
+                        notificationMessage: params.message,
+                        dateTimeSent: params.dateTimeSent,
+                        from: params.from,
+                        to: params.to
+                    }
+                }).spread(function (notification, created) {
+                    if (!created)
+                        message.weeklyLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+                    else
+                        message.weeklyLogMessage = 'Message log to the table';
+                }).catch(function (error) {
+                    message.weeklyLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+                    message.error = util.inspect(error);
+                });
+
+                //end of notification logging
+
                 return res.json(message);
             }).catch(function (error) {
                 console.error('Error in updating the user device : ' + error);
@@ -777,6 +1086,43 @@ router.post('/deleteWeeklyLog', userAuthenticate, function (req, res) {
             data.destroy();
             message.name = 'Success';
             message.message = 'Weekly log deleted';
+
+            //Add entry to notification table - for the supporter
+            var params = {};
+
+            params.userId = req.session.userId;
+            params.message = "Weekly log deleted";
+            params.dateTimeSent = new Date().toISOString();
+            params.to = res.locals.supporterId;
+            params.from = req.session.userId;
+
+            db.app.notifications.findOrCreate({
+                where: {
+                    userUserId: params.userId,
+                    notificationMessage: params.message,
+                    dateTimeSent: params.dateTimeSent,
+                    from: params.from,
+                    to: params.to
+                },
+                defaults: {
+                    userUserId: params.userId,
+                    notificationMessage: params.message,
+                    dateTimeSent: params.dateTimeSent,
+                    from: params.from,
+                    to: params.to
+                }
+            }).spread(function (notification, created) {
+                if (!created)
+                    message.weeklyLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+                else
+                    message.weeklyLogMessage = 'Message log to the table';
+            }).catch(function (error) {
+                message.weeklyLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+                message.error = util.inspect(error);
+            });
+
+            //end of notification logging
+
             return res.json(message);
         } else {
             message.name = 'Failure';

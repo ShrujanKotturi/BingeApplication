@@ -107,7 +107,7 @@ router.post('/createUser', adminAuthenticate, function (req, res) {
             sendMotivationalMessages: body.motivationalMessages
         }
     }).spread(function (savedObject, created) {
-        if (_is.Empty(created)) {
+        if (!(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Couldn\'t create user'
@@ -159,7 +159,7 @@ router.post('/createSupporter', adminAuthenticate, function (req, res) {
             isAdmin: false
         }
     }).spread(function (savedObject, created) {
-        if (_is.Empty(created)) {
+        if (!(created)) {
             message = {
                 'name': 'Failure',
                 'message': 'Couldn\'t create supporter'
