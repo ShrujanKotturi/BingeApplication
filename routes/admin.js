@@ -183,6 +183,82 @@ router.post('/createSupporter', adminAuthenticate, function (req, res) {
     });
 });
 
+router.get('/getParticipantProfile', adminAuthenticate, function (req, res) {
+    var query = _.pick(req.query, 'userId');
+
+    if (typeof query.userId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.users.findOne({
+        where: {
+            isActive: true,
+            userId: query.userId
+        }
+    }).then(function (users) {
+        if (!_.isEmpty(users))
+            return res.json(users.toPublicJSON());
+        else
+            return res.status(400).json({ 'name': 'Failure', 'message': 'Couldn\'t fetch participants details' });
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
+
+router.post('/updateParticipantProfile', adminAuthenticate, function (req, res) {
+    var body = _.pick(req.body, 'userId', 'age', 'logNotifications', 'appNotifications', 'quickLog', 'sendMotivationalMessages', 'researcherSupporterId');
+
+    if (typeof body.userId !== 'string' || typeof body.age !== 'string' || typeof body.logNotifications !== 'string' || typeof body.appNotifications !== 'string' || typeof body.quickLog !== 'string' || typeof body.sendMotivationalMessages !== 'string' || typeof body.researcherSupporterId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.users.find({
+        where: {
+            userId: body.userId,
+            isActive: true
+        }
+    }).then(function (data) {
+        if (!_.isEmpty(data)) {
+            data.update({
+                userId: body.userId,
+                age: body.age,
+                researcherSupporterId: body.researcherSupporterId,
+                logNotifications: body.logNotifications,
+                appNotifications: body.appNotifications,
+                quickLog: body.quickLog,
+                sendMotivationalMessages: body.sendMotivationalMessages
+            }).then(function (data1) {
+                console.log('data1: ' + data1);
+                message.name = 'Success';
+                message.message = 'Updated user profile successfully';
+                message.data = data1;
+                return res.json(message);
+            }).catch(function (error) {
+                console.error('Error in updating the user profile : ' + error);
+                message.name = 'Failure';
+                message.message = 'Error in updating the profile';
+                message.error = util.inspect(error);
+                return res.status(404).send(message);
+            });
+        }
+    });
+});
+
 router.get('/getAllSupporters', adminAuthenticate, function (req, res) {
 
     console.log(util.inspect(req.session));
