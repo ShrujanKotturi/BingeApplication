@@ -176,17 +176,17 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
     }
 
     console.log(body.logDateTime);
-
+    var userId = res.locals.userId || req.session.userId;
     db.app.dailyFoodLog.findOrCreate({
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             foodConsumedLog: body.food,
             feelingBinge: body.binge,
             feelingVomiting: body.vomit,
             dateTimeLogged: body.logDateTime
         },
         defaults: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             foodConsumedLog: body.food,
             latitude: body.latitude,
             longitude: body.longitude,
@@ -210,11 +210,11 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
         //Add entry to notification table - for the supporter
         var params = {};
 
-        params.userId = req.session.userId;
+        params.userId = userId;
         params.message = "Food log logged";
         params.dateTimeSent = new Date().toISOString();
         params.to = res.locals.supporterId;
-        params.from = req.session.userId;
+        params.from = userId;
 
         db.app.notifications.findOrCreate({
             where: {
@@ -266,11 +266,11 @@ router.get('/getFoodLog', userAuthenticate, function (req, res) {
     }
 
     var results = {};
-
+    var userId = res.locals.userId || req.session.userId;
     db.app.dailyPhysicalLog.findAll({
         attributes: [['dailyPhysicalLogId', 'Daily Physical Log Id'], ['physicalActivityPerformed', 'Physical Activity Logged'], ['duration', 'Duration'], ['dateTimeLogged', 'Logged Time'], ['feelingTired', 'Feeling Tired']],
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
         }
     }).then(function (supporters) {
@@ -287,7 +287,7 @@ router.get('/getFoodLog', userAuthenticate, function (req, res) {
     db.app.dailyFoodLog.findAll({
         attributes: [['dailyFoodLogId', 'Daily Food Log Id'], ['foodConsumedLog', 'Food Consumed'], ['foodConsumedURL', 'Image'], 'latitude', 'longitude', ['dateTimeLogged', 'Logged Time'], ['feelingBinge', 'Feeling Binge'], ['feelingVomiting', 'Feeling Vomiting'], ['returnType', 'Image Type']],
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
         }
     }).then(function (supporters) {
@@ -314,10 +314,10 @@ router.post('/updateFoodLog', userAuthenticate, function (req, res) {
         };
         return res.status(403).send(message);
     }
-
+    var userId = res.locals.userId || req.session.userId;
     db.app.dailyFoodLog.find({
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             dailyFoodLogId: body.dailyFoodLogId
         }
     }).then(function (data) {
@@ -338,11 +338,11 @@ router.post('/updateFoodLog', userAuthenticate, function (req, res) {
                 //Add entry to notification table - for the supporter
                 var params = {};
 
-                params.userId = req.session.userId;
+                params.userId = userId;
                 params.message = "Food log updated";
                 params.dateTimeSent = new Date().toISOString();
                 params.to = res.locals.supporterId;
-                params.from = req.session.userId;
+                params.from = userId;
 
                 db.app.notifications.findOrCreate({
                     where: {
@@ -394,10 +394,10 @@ router.post('/deleteFoodLog', userAuthenticate, function (req, res) {
         };
         return res.status(400).send(message);
     }
-
+    var userId = res.locals.userId || req.session.userId;
     db.app.dailyFoodLog.find({
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             dailyFoodLogId: body.dailyFoodLogId
         }
     }).then(function (data) {
@@ -410,11 +410,11 @@ router.post('/deleteFoodLog', userAuthenticate, function (req, res) {
             //Add entry to notification table - for the supporter
             var params = {};
 
-            params.userId = req.session.userId;
+            params.userId = userId;
             params.message = "Food log deleted";
             params.dateTimeSent = new Date().toISOString();
             params.to = res.locals.supporterId;
-            params.from = req.session.userId;
+            params.from = userId;
 
             db.app.notifications.findOrCreate({
                 where: {
@@ -490,16 +490,18 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
         });
     });
 
+    var userId = res.locals.userId || req.session.userId;
+
     db.app.dailyFoodLog.findOrCreate({
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             foodConsumedLog: body.food,
             feelingBinge: body.binge,
             feelingVomiting: body.vomit,
             dateTimeLogged: body.logDateTime
         },
         defaults: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             foodConsumedLog: body.food,
             foodConsumedURL: newPath + returnType,
             latitude: body.latitude,
@@ -525,11 +527,11 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
         //Add entry to notification table - for the supporter
         var params = {};
 
-        params.userId = req.session.userId;
+        params.userId = userId;
         params.message = "Quick food log logged";
         params.dateTimeSent = new Date().toISOString();
         params.to = res.locals.supporterId;
-        params.from = req.session.userId;
+        params.from = userId;
 
         db.app.notifications.findOrCreate({
             where: {
@@ -582,10 +584,11 @@ router.post('/updateQuickLog', userAuthenticate, function (req, res) {
         };
         return res.status(403).send(message);
     }
+    var userId = res.locals.userId || req.session.userId;
 
     db.app.dailyFoodLog.find({
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             dailyFoodLogId: body.dailyFoodLogId
         }
     }).then(function (data) {
@@ -628,17 +631,17 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
         };
         return res.status(400).send(message);
     }
-
+    var userId = res.locals.userId || req.session.userId;
     db.app.dailyPhysicalLog.findOrCreate({
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             physicalActivityPerformed: body.physicalActivityPerformed,
             duration: body.duration,
             feelingTired: body.feelingTired,
             dateTimeLogged: body.logDateTime
         },
         defaults: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             physicalActivityPerformed: body.physicalActivityPerformed,
             duration: body.duration,
             feelingTired: body.feelingTired,
@@ -660,11 +663,11 @@ router.post('/physicalLog', userAuthenticate, function (req, res) {
         //Add entry to notification table - for the supporter
         var params = {};
 
-        params.userId = req.session.userId;
+        params.userId = userId;
         params.message = "Physical log logged";
         params.dateTimeSent = new Date().toISOString();
         params.to = res.locals.supporterId;
-        params.from = req.session.userId;
+        params.from = userId;
 
         db.app.notifications.findOrCreate({
             where: {
@@ -717,10 +720,10 @@ router.post('/updatePhysicalLog', userAuthenticate, function (req, res) {
         };
         return res.status(400).send(message);
     }
-
+    var userId = res.locals.userId || req.session.userId;
     db.app.dailyPhysicalLog.find({
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             dailyPhysicalLogId: body.dailyPhysicalLogId
         }
     }).then(function (data) {
@@ -739,11 +742,11 @@ router.post('/updatePhysicalLog', userAuthenticate, function (req, res) {
                 //Add entry to notification table - for the supporter
                 var params = {};
 
-                params.userId = req.session.userId;
+                params.userId = userId;
                 params.message = "Physical log updated";
                 params.dateTimeSent = new Date().toISOString();
                 params.to = res.locals.supporterId;
-                params.from = req.session.userId;
+                params.from = userId;
 
                 db.app.notifications.findOrCreate({
                     where: {
@@ -796,10 +799,10 @@ router.post('/deletePhysicalLog', userAuthenticate, function (req, res) {
         };
         return res.status(400).send(message);
     }
-
+    var userId = res.locals.userId || req.session.userId;
     db.app.dailyPhysicalLog.find({
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             dailyPhysicalLogId: body.dailyPhysicalLogId
         }
     }).then(function (data) {
@@ -811,11 +814,11 @@ router.post('/deletePhysicalLog', userAuthenticate, function (req, res) {
             //Add entry to notification table - for the supporter
             var params = {};
 
-            params.userId = req.session.userId;
+            params.userId = userId;
             params.message = "Physical log deleted";
             params.dateTimeSent = new Date().toISOString();
             params.to = res.locals.supporterId;
-            params.from = req.session.userId;
+            params.from = userId;
 
             db.app.notifications.findOrCreate({
                 where: {
@@ -870,10 +873,11 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
         };
         return res.status(400).send(message);
     }
+    var userId = res.locals.userId || req.session.userId;
 
     db.app.weeklyLog.findOrCreate({
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             weekId: body.weekId,
             binges: body.binges,
             goodDays: body.goodDays,
@@ -885,7 +889,7 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
             dateAdded: body.logDateTime
         },
         defaults: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             weekId: body.weekId,
             binges: body.binges,
             goodDays: body.goodDays,
@@ -911,12 +915,12 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
 
         //Add entry to notification table - for the supporter
         var params = {};
-
-        params.userId = req.session.userId;
+        var userId = res.locals.userId || req.session.userId;
+        params.userId = userId;
         params.message = "Weekly log logged";
         params.dateTimeSent = new Date().toISOString();
         params.to = res.locals.supporterId;
-        params.from = req.session.userId;
+        params.from = userId;
 
         db.app.notifications.findOrCreate({
             where: {
@@ -960,11 +964,11 @@ router.post('/weeklyLog', userAuthenticate, function (req, res) {
 });
 
 router.get('/getWeeklyLog', userAuthenticate, function (req, res) {
-
+    var userId = res.locals.userId || req.session.userId;
     db.app.weeklyLog.findAll({
         attributes: [['weeklyLogId', 'Weekly Log Id'], ['WeekId', 'Week Id'], ['binges', 'Number of Binges'], ['goodDays', 'No. of good days'], ['weight', 'Weight'], ['V', 'V'], ['L', 'L'], ['D', 'D'], ['events', 'Events'], ['dateAdded', 'Date Logged for']],
         where: {
-            userUserId: req.session.userId
+            userUserId: userId
             // dateAdded: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateAdded')), '=', query.date)
         }
     }).then(function (weeklyLog) {
@@ -995,10 +999,11 @@ router.post('/updateWeeklyLog', userAuthenticate, function (req, res) {
         };
         return res.status(400).send(message);
     }
+    var userId = res.locals.userId || req.session.userId;
 
     db.app.weeklyLog.find({
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             weeklyLogId: body.weeklyLogId
         }
     }).then(function (data) {
@@ -1021,11 +1026,11 @@ router.post('/updateWeeklyLog', userAuthenticate, function (req, res) {
                 //Add entry to notification table - for the supporter
                 var params = {};
 
-                params.userId = req.session.userId;
+                params.userId = userId;
                 params.message = "Weekly log updated";
                 params.dateTimeSent = new Date().toISOString();
                 params.to = res.locals.supporterId;
-                params.from = req.session.userId;
+                params.from = userId;
 
                 db.app.notifications.findOrCreate({
                     where: {
@@ -1076,10 +1081,10 @@ router.post('/deleteWeeklyLog', userAuthenticate, function (req, res) {
         };
         return res.status(400).send(message);
     }
-
+    var userId = res.locals.userId || req.session.userId;
     db.app.weeklyLog.find({
         where: {
-            userUserId: req.session.userId,
+            userUserId: userId,
             weeklyLogId: body.weeklyLogId
         }
     }).then(function (data) {
@@ -1091,11 +1096,11 @@ router.post('/deleteWeeklyLog', userAuthenticate, function (req, res) {
             //Add entry to notification table - for the supporter
             var params = {};
 
-            params.userId = req.session.userId;
+            params.userId = userId;
             params.message = "Weekly log deleted";
             params.dateTimeSent = new Date().toISOString();
             params.to = res.locals.supporterId;
-            params.from = req.session.userId;
+            params.from = userId;
 
             db.app.notifications.findOrCreate({
                 where: {
