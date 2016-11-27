@@ -12,8 +12,10 @@ module.exports = function (req, res, next) {
 
         var bytes = cryptojs.AES.decrypt(decoded.token, 'abc123!@#');
         var tokenData = JSON.parse(bytes.toString(cryptojs.enc.Utf8));
-        //res.locals.userId = tokenData.userId
+        
+        res.locals.userId = tokenData.userId
         res.locals.supporterId = tokenData.researcherSupporterId;
+        
         next();
     }
     catch (err) {
