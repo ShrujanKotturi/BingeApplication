@@ -28,6 +28,7 @@ router.get('/login', function (req, res) {
         return res.status(400).send(message);
     }
     db.app.users.findOne({
+        attributes: [['userId', 'userId'], ['salt', 'salt'], ['passwordHash', 'passwordHash'], ['isActive', 'isActive'], ['age', 'age'], ['score', 'score'], ['logNotifications', 'logNotifications'], ['researcherSupporterId', 'researcherSupporterId']],
         where: {
             userId: query.userId
         }
