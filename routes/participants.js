@@ -17,7 +17,6 @@ var message = {},
     session = {};
 
 
-
 router.get('/login', function (req, res) {
     var query = _.pick(req.query, 'userId', 'password', 'deviceId');
     if (typeof query.userId !== 'string' || typeof query.password !== 'string' || typeof query.deviceId !== 'string') {
@@ -133,7 +132,7 @@ router.post('/registerDevice', function (req, res) {
             console.log(error);
             message = {
                 'name': error.name,
-                'message': error.errors[0].message
+                'message': error
             };
             return res.status(400).json(message);
         });
@@ -860,6 +859,58 @@ router.post('/deletePhysicalLog', userAuthenticate, function (req, res) {
     });
 });
 
+
+//Dashboard
+router.get('/dashboard', userAuthenticate, function (req, res) {
+    var userId = res.locals.userId || req.session.userId;
+    var result = {};
+
+    //noOfStepsFinished
+    db.app.progress.findAndCountAll({
+        where: {
+            userId: userId,
+            status: "Approved"
+        }
+    }).then(function (data) {
+        if (!_.isEmpty(data)) {
+            result.noOfStepsFinished = data.count;
+        } else {
+            result.noOfStepsFinished = 0;
+        }
+    }).catch(function (error) {
+        message.name = 'Failure';
+        message.noOfStepsFinished = util.inspect(error);
+    });
+
+    //upcomingNotification
+    db.app.appointments.findAll({
+        attributes: [['appointmentTime', 'time'], ['title', 'message']],
+        where: {
+            userUserId: userId,
+            appointmentTime: {
+                gte: new Date().toISOString()
+            }
+        },
+        order: [['appointmentTime', 'DESC']],
+        limit: 1
+    }).then(function (appointments) {
+        if (!_.isEmpty(appointments)) {
+            result.upcomingNotification = appointments;
+        } else {
+            result.upcomingNotification = "No upcoming appointments"
+        }
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+
+    //dailylogtoday
+
+});
 
 //Weekly Log
 router.post('/weeklyLog', userAuthenticate, function (req, res) {

@@ -81,8 +81,8 @@ module.exports = {
         autoIncrement: true,
         allowNull: false
       },
-      statusDate: {
-        type: Sequelize.DATE,
+      status: {
+        type: Sequelize.STRING,
         allowNull: false
       },
       userId: {
