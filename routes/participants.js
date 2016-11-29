@@ -108,35 +108,28 @@ router.post('/registerDevice', function (req, res) {
         registeredTime: body.registeredTime,
         deviceId: body.deviceId,
         fcmToken: body.fcmToken
-    }, {
-            validate: true,
-            fields: {
-                registeredTime: body.registeredTime,
-                deviceId: body.deviceId,
-                fcmToken: body.fcmToken
-            }
-        }).then(function (savedObject) {
-            if (_.isEmpty(savedObject)) {
-                message = {
-                    'name': "Failure",
-                    'message': 'Error in registering the device'
-                };
-                return res.status(404).json(message);
-            }
+    }).then(function (savedObject) {
+        if (_.isEmpty(savedObject)) {
             message = {
-                'name': "Success",
-                'message': "Device registered with Women Health Project",
-                'result': util.inspect(savedObject)
+                'name': "Failure",
+                'message': 'Error in registering the device'
             };
-            return res.json(message);
-        }).catch(function (error) {
-            console.log(error);
-            message = {
-                'name': error.name,
-                'message': error
-            };
-            return res.status(400).json(message);
-        });
+            return res.status(404).json(message);
+        }
+        message = {
+            'name': "Success",
+            'message': "Device registered with Women Health Project",
+            'result': util.inspect(savedObject)
+        };
+        return res.json(message);
+    }).catch(function (error) {
+        console.log(error);
+        message = {
+            'name': error.name,
+            'message': error
+        };
+        return res.status(400).json(message);
+    });
 });
 
 router.get('/getDates', userAuthenticate, function (req, res) {
