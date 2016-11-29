@@ -522,5 +522,74 @@ module.exports = function (sequelize, DataTypes) {
     db.researchers.hasMany(db.assignChallenges);
     db.challenges.hasMany(db.assignChallenges);
 
+    db.steps = sequelize.define('steps', {
+        stepId: {
+            type: DataTypes.STRING,
+            primaryKey: true,
+            allowNull: false
+        },
+        description: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        checkList: {
+            type: DataTypes.STRING,
+            allowNull: false
+        }
+    }, {
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
+
+    db.response = sequelize.define('response', {
+        responseId: {
+            type: DataTypes.STRING,
+            primaryKey: true,
+            allowNull: false
+        },
+        stepId: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        userResponse: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        comments: {
+            type: DataTypes.STRING
+        },
+        logDateTime: {
+            type: DataTypes.DATE,
+            allowNull: false
+        }
+    }, {
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
+
+    db.response.hasMany(db.users);
+
+    db.progress = sequelize.define('progress', {
+        progressId: {
+            type: DataTypes.STRING,
+            primaryKey: true,
+            allowNull: false
+        },
+        statusDate: {
+            type: DataTypes.DATE,
+            allowNull: false
+        }
+    }, {
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
+        });
+
+    db.progress.hasMany(db.users);
+    db.progress.hasMany(db.researchers);
+    db.progress.hasMany(db.response);
+    
     return db;
 };

@@ -11,10 +11,14 @@ module.exports = {
             type: Sequelize.STRING,
             allowNull: false
         });
+
+        return;
     },
 
     down: function(queryInterface, Sequelize) {
         queryInterface.removeColumn('notifications', 'from');
         queryInterface.removeColumn('notifications', 'to');
+
+        return;
     }
 };
