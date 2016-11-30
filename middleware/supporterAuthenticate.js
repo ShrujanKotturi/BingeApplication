@@ -7,10 +7,10 @@ var cryptojs = require('crypto-js'),
 
 module.exports = function (req, res, next) {
     var token = req.header('x-auth');
-
+    console.log('before decoding token data : ', token);
     try {
         var decoded = jwt.verify(token, 'qwerty098');
-        //console.log(decoded);
+        console.log('decoded token data : ', decoded);
 
         var bytes = cryptojs.AES.decrypt(decoded.token, 'abc123!@#');
         var tokenData = JSON.parse(bytes.toString(cryptojs.enc.Utf8));
