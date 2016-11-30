@@ -454,15 +454,16 @@ router.post('/deleteFoodLog', userAuthenticate, function (req, res) {
 
 //Quick Log
 router.post('/quickLog', userAuthenticate, function (req, res) {
-    var newPath = __dirname.substring(0, __dirname.indexOf("\\routes")) + '\\images';
-    var body = _.pick(req.body, 'food', 'latitude', 'longitude', 'binge', 'vomit', 'returnType', 'logDateTime');
-
-    body.imageFile = req.files.image;
-    body.returnType = path.extname(req.files.image.originalFilename).toLowerCase();
-    console.log("typeof the imagefile : " + typeof body.imageFile);
-    console.log("originalFilename : " + req.files.image.originalFilename);
-    console.log("originalFilePath : " + req.files.image.path);
-    if (typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.returnType !== 'string' || typeof body.logDateTime !== 'string') {
+    // var newPath = __dirname.substring(0, __dirname.indexOf("\\routes")) + '\\images';
+    // var body = _.pick(req.body, 'food', 'latitude', 'longitude', 'binge', 'vomit', 'returnType', 'logDateTime');
+    var body = _.pick(req.body, 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime', 'image');
+    body.logDateTime = new Date(body.logDateTime).toISOString();
+    // body.imageFile = req.files.image;
+    // body.returnType = path.extname(req.files.image.originalFilename).toLowerCase();
+    // console.log("typeof the imagefile : " + typeof body.imageFile);
+    // console.log("originalFilename : " + req.files.image.originalFilename);
+    // console.log("originalFilePath : " + req.files.image.path);
+    if (typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.logDateTime !== 'string' || typeof body.image !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -470,18 +471,18 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
         return res.status(400).send(message);
     }
 
-    fs.readFile(body.imageFile.path, function (err, data) {
-        newPath += req.files.image.originalFilename;
-        //newPath += req.files.image.originalFilename;
-        console.log(newPath);
-        fs.writeFile(newPath, data, function (err) {
-            if (err) {
-                message.image = 'Error in uploading the image';
-            } else {
-                message.image = 'Image uploaded successfully';
-            }
-        });
-    });
+    // fs.readFile(body.imageFile.path, function (err, data) {
+    //     newPath += req.files.image.originalFilename;
+    //     //newPath += req.files.image.originalFilename;
+    //     console.log(newPath);
+    //     fs.writeFile(newPath, data, function (err) {
+    //         if (err) {
+    //             message.image = 'Error in uploading the image';
+    //         } else {
+    //             message.image = 'Image uploaded successfully';
+    //         }
+    //     });
+    // });
 
     var userId = res.locals.userId || req.session.userId;
 
@@ -491,18 +492,18 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
             foodConsumedLog: body.food,
             feelingBinge: body.binge,
             feelingVomiting: body.vomit,
-            dateTimeLogged: body.logDateTime
+            dateTimeLogged: body.logDateTime,
+            foodConsumedURL: body.image
         },
         defaults: {
             userUserId: userId,
             foodConsumedLog: body.food,
-            foodConsumedURL: newPath + returnType,
             latitude: body.latitude,
             longitude: body.longitude,
             feelingBinge: body.binge,
             feelingVomiting: body.vomit,
             dateTimeLogged: body.logDateTime,
-            returnType: body.returnType
+            foodConsumedURL: body.image
         }
     }).spread(function (foodLog, created) {
         if (!(created)) {
@@ -567,10 +568,10 @@ router.post('/quickLog', userAuthenticate, function (req, res) {
 
 //add to the notification table about update to the quick log
 router.post('/updateQuickLog', userAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'dailyFoodLogId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
+    var body = _.pick(req.body, 'dailyFoodLogId', 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime', 'image');
     body.logDateTime = new Date(body.logDateTime).toISOString();
 
-    if (typeof body.dailyFoodLogId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.logDateTime !== 'string') {
+    if (typeof body.dailyFoodLogId !== 'string' || typeof body.food !== 'string' || typeof body.latitude !== 'string' || typeof body.longitude !== 'string' || typeof body.binge !== 'string' || typeof body.vomit !== 'string' || typeof body.logDateTime !== 'string' || typeof body.image !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -592,7 +593,8 @@ router.post('/updateQuickLog', userAuthenticate, function (req, res) {
                 longitude: body.longitude,
                 feelingBinge: body.binge,
                 feelingVomiting: body.vomit,
-                dateTimeLogged: body.logDateTime
+                dateTimeLogged: body.logDateTime,
+                foodConsumedURL: body.image
             }).then(function (data1) {
                 console.log('data1: ' + data1);
                 message.name = 'Success';
@@ -860,6 +862,7 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
     var result = {};
 
     //noOfStepsFinished
+    result.noOfStepsFinished = 0;
     db.app.progress.findAndCountAll({
         where: {
             userId: userId,
@@ -878,6 +881,7 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
     });
 
     //upcomingNotification
+    result.upcomingNotification = "No upcoming appointments"
     db.app.appointments.findAll({
         attributes: [['appointmentTime', 'time'], ['title', 'message']],
         where: {
@@ -901,6 +905,7 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
     });
 
     //stats
+    result.stats = [];
     db.app.weeklyLog.findAll({
         attributes: [['goodDays', 'goodDays'], ['dateAdded', 'dateTime'], ['binges', 'binge']],
         where: {
@@ -918,7 +923,7 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
     });
 
     //dailylogtoday
-    //result.dailylogtoday = 0;
+    result.dailylogtoday = 0;
     var sqlQuery = "SELECT COUNT(DATE(dateTimeLogged)) AS dailylogtoday FROM dailyFoodLogs WHERE userUserId = '" + userId + "' AND DATE(dateTimeLogged) = '" + new Date().getFullYear() + "-" + (new Date().getMonth() + 1) + "-" + "08" + "'";
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
         console.log(util.inspect(results[0].dailylogtoday));
@@ -929,6 +934,7 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
     });
 
     //weight
+    result.weight = [];
     db.app.weeklyLog.findAll({
         attributes: [['weight', 'weight'], ['dateAdded', 'dateTime']],
         where: {
@@ -1482,11 +1488,11 @@ router.post('/deleteNotes', userAuthenticate, function (req, res) {
 
 router.get('/getAppointmentDetails', userAuthenticate, function (req, res) {
     var userId = res.locals.userId || req.session.userId;
-    // var sqlQuery = "SELECT * FROM appointments INNER JOIN notes on notes.appointmentAppointmentId = appointments.appointmentId WHERE appointments.userUserId = '" + userId + "'";
+    var sqlQuery = "SELECT * FROM appointments INNER JOIN notes on notes.appointmentAppointmentId = appointments.appointmentId WHERE appointments.userUserId = '" + userId + "'";
     // var sqlQuery1 = "SELECT * FROM appointments WHERE appointments.userUserId = '" + userId + "'";
     // var sqlQuery2 = "SELECT * FROM notes WHERE notes.userUserId = '" + userId + "'";
     // var sqlQuery = "SELECT DISTINCT appointments.appointmentId AS id, appointments.appointmentTime as dateTime, appointments.title as title, appointments.researcherSupporterId AS supporter, (SELECT GROUP_CONCAT(DISTINCT notesId , notes, isAdminShareable, title) FROM notes n WHERE n.appointmentAppointmentId = appointmentId) AS notes     FROM appointments INNER JOIN notes on notes.appointmentAppointmentId = appointments.appointmentId WHERE appointments.userUserId = '" + userId + "' GROUP BY appointments.appointmentId";
-    var sqlQuery = "SELECT DISTINCT a.appointmentId AS id, a.appointmentTime as dateTime, a.title as title, a.researcherSupporterId AS supporter, (SELECT JSON_OBJECT('id', notesId , 'notes', notes,'adminshared', isAdminShareable,'title', title) FROM notes n WHERE n.appointmentAppointmentId = a.appointmentId) AS notes  FROM appointments a INNER JOIN notes n on n.appointmentAppointmentId = a.appointmentId WHERE a.userUserId = '" + userId + "' GROUP BY a.appointmentId";
+    // var sqlQuery = "SELECT DISTINCT a.appointmentId AS id, a.appointmentTime as dateTime, a.title as title, a.researcherSupporterId AS supporter, (SELECT JSON_OBJECT('id', notesId , 'notes', notes,'adminshared', isAdminShareable,'title', title) FROM notes n WHERE n.appointmentAppointmentId = a.appointmentId) AS notes  FROM appointments a INNER JOIN notes n on n.appointmentAppointmentId = a.appointmentId WHERE a.userUserId = '" + userId + "' GROUP BY a.appointmentId";
     //var sqlQuery = "SELECT DISTINCT a.appointmentId AS id, a.appointmentTime as dateTime, a.title as title, a.researcherSupporterId AS supporter, row_to_json(n.notesId , n.notes, n.isAdminShareable, n.title) AS notes FROM appointments a INNER JOIN notes n on n.appointmentAppointmentId = a.appointmentId WHERE a.userUserId = '" + userId + "' GROUP BY a.appointmentId";
     // console.log(sqlQuery1);
     // console.log(sqlQuery2);
