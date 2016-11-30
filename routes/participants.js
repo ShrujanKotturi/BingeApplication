@@ -280,8 +280,8 @@ router.get('/getFoodLog', userAuthenticate, function (req, res) {
     db.app.dailyFoodLog.findAll({
         attributes: [['dailyFoodLogId', 'Daily Food Log Id'], ['foodConsumedLog', 'Food Consumed'], ['foodConsumedURL', 'Image'], 'latitude', 'longitude', ['dateTimeLogged', 'Logged Time'], ['feelingBinge', 'Feeling Binge'], ['feelingVomiting', 'Feeling Vomiting'], ['returnType', 'Image Type']],
         where: {
-            userUserId: userId,
-            dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
+            userUserId: userId
+           // dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
         }
     }).then(function (supporters) {
         results.Foodlogs = supporters;
