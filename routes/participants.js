@@ -863,22 +863,15 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
 
     //noOfStepsFinished
     result.noOfStepsFinished = 0;
-    db.app.progress.findAndCountAll({
-        where: {
-            userId: userId,
-            status: "Approved"
-        }
-    }).then(function (data) {
-        if (!_.isEmpty(data)) {
-            console.log(data);
-            result.noOfStepsFinished = data.count;
-        } else {
-            result.noOfStepsFinished = 0;
-        }
+    var sqlQuery = "SELECT COUNT(progressId) AS noOfStepsFinished FROM progresses WHERE userId = '" + userId + "' AND status = 'Approved'";
+    db.sequelize.query(sqlQuery).spread(function (results, metadata) {
+        console.log(util.inspect(results[0].noOfStepsFinished));
+        result.noOfStepsFinished = results[0].noOfStepsFinished;
     }).catch(function (error) {
         message.name = 'Failure';
         message.noOfStepsFinished = util.inspect(error);
     });
+    
 
     //upcomingNotification
     result.upcomingNotification = "No upcoming appointments"
@@ -924,7 +917,7 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
 
     //dailylogtoday
     result.dailylogtoday = 0;
-    var sqlQuery = "SELECT COUNT(DATE(dateTimeLogged)) AS dailylogtoday FROM dailyFoodLogs WHERE userUserId = '" + userId + "' AND DATE(dateTimeLogged) = '" + new Date().getFullYear() + "-" + (new Date().getMonth() + 1) + "-" + "08" + "'";
+    var sqlQuery = "SELECT COUNT(DATE(dateTimeLogged)) AS dailylogtoday FROM dailyFoodLogs WHERE userUserId = '" + userId + "' AND DATE(dateTimeLogged) = '" + new Date().getFullYear() + "-" + (new Date().getMonth() + 1) + "-" + new Date().getDay() + "'";
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
         console.log(util.inspect(results[0].dailylogtoday));
         result.dailylogtoday = results[0].dailylogtoday;
