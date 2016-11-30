@@ -899,15 +899,6 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
         console.log(error);
     });
 
-    //dailylogtoday
-    var sqlQuery = "SELECT COUNT(DATE(dateTimeLogged)) AS dailylogtoday FROM dailyFoodLogs WHERE userUserId = '" + userId + "' AND DATE(dateTimeLogged) = '" + new Date().toISOString() + "'";
-    db.sequelize.query(sqlQuery).spread(function (results, metadata) {
-        resultsData.dailylogtoday = results.dailylogtoday;
-    }).catch(function (error) {
-        message.name = 'Failure';
-        message.dailylogtoday = util.inspect(error);
-    });
-
     //stats
     db.app.weeklyLog.findAll({
         attributes: [['goodDays', 'goodDays'], ['dateAdded', 'dateTime'], ['binges', 'binge']],
@@ -923,6 +914,16 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
     }).catch(function (error) {
         message.name = 'Failure';
         message.stats = util.inspect(error);
+    });
+
+    //dailylogtoday
+    var sqlQuery = "SELECT COUNT(DATE(dateTimeLogged)) AS dailylogtoday FROM dailyFoodLogs WHERE userUserId = '" + userId + "' AND DATE(dateTimeLogged) = '" + new Date().getFullYear() + "-" + (new Date().getMonth() + 1) + "-" + "08" + "'";
+    db.sequelize.query(sqlQuery).spread(function (results, metadata) {
+        console.log(util.inspect(results[0].dailylogtoday));
+        result.dailylogtoday = results[0].dailylogtoday;
+    }).catch(function (error) {
+        message.name = 'Failure';
+        message.dailylogtoday = util.inspect(error);
     });
 
     //weight
