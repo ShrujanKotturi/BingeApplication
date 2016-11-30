@@ -248,23 +248,23 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
 });
 
 router.get('/getFoodLog', userAuthenticate, function (req, res) {
-    var query = _.pick(req.query, 'date');
-    if (typeof query.date !== 'string') {
-        message = {
-            'name': 'Error',
-            'message': 'Problem with query parameters'
-        };
-        console.log(message);
-        return res.status(400).send(message);
-    }
+    // var query = _.pick(req.query, 'date');
+    // if (typeof query.date !== 'string') {
+    //     message = {
+    //         'name': 'Error',
+    //         'message': 'Problem with query parameters'
+    //     };
+    //     console.log(message);
+    //     return res.status(400).send(message);
+    // }
 
     var results = {};
     var userId = res.locals.userId || req.session.userId;
     db.app.dailyPhysicalLog.findAll({
         attributes: [['dailyPhysicalLogId', 'Daily Physical Log Id'], ['physicalActivityPerformed', 'Physical Activity Logged'], ['duration', 'Duration'], ['dateTimeLogged', 'Logged Time'], ['feelingTired', 'Feeling Tired']],
         where: {
-            userUserId: userId,
-            dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
+            userUserId: userId
+            //dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
         }
     }).then(function (supporters) {
         results.PhysicalLogs = supporters;
@@ -1508,7 +1508,6 @@ router.get('/getAppointmentDetails', userAuthenticate, function (req, res) {
     });
 });
 
-
 router.get('/getStepInfo', userAuthenticate, function (req, res) {
     var userId = res.locals.userId || req.session.userId;
 
@@ -1532,4 +1531,6 @@ router.get('/getStepInfo', userAuthenticate, function (req, res) {
         return res.status(400).send(message);
     });
 });
+
+
 module.exports = router;
