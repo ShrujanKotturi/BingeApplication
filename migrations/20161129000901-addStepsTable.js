@@ -11,11 +11,11 @@ module.exports = {
         autoIncrement: true,
       },
       description: {
-        type: Sequelize.STRING(10000),
+        type: Sequelize.STRING,
         allowNull: false
       },
       checkList: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(10000),
         allowNull: false
       },
       createdAt: {

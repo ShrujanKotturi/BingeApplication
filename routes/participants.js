@@ -155,7 +155,7 @@ router.get('/getDates', userAuthenticate, function (req, res) {
 
 //Food Log
 router.post('/foodLog', userAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime');
+    var body = _.pick(req.body, 'food', 'latitude', 'longitude', 'binge', 'vomit', 'logDateTime', 'tag');
     body.logDateTime = new Date(body.logDateTime).toISOString();
     // console.log(__dirname);
     // __dirname = __dirname.substring(0, __dirname.indexOf("\\routes")) + '\\images';
@@ -867,6 +867,7 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
         }
     }).then(function (data) {
         if (!_.isEmpty(data)) {
+            console.log(data);
             result.noOfStepsFinished = data.count;
         } else {
             result.noOfStepsFinished = 0;
@@ -917,6 +918,7 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
     });
 
     //dailylogtoday
+    //result.dailylogtoday = 0;
     var sqlQuery = "SELECT COUNT(DATE(dateTimeLogged)) AS dailylogtoday FROM dailyFoodLogs WHERE userUserId = '" + userId + "' AND DATE(dateTimeLogged) = '" + new Date().getFullYear() + "-" + (new Date().getMonth() + 1) + "-" + "08" + "'";
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
         console.log(util.inspect(results[0].dailylogtoday));
@@ -1230,5 +1232,305 @@ router.post('/deleteWeeklyLog', userAuthenticate, function (req, res) {
     });
 });
 
+//Notes
+router.post('/addNotes', userAuthenticate, function (req, res) {
+    var body = _.pick(req.body, 'notes', 'shareable', 'appointmentId', 'titl');
 
+    if (typeof body.notes !== 'string' || typeof body.shareable !== 'string' || typeof body.appointmentId !== 'string' || typeof body.titl !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+    var userId = res.locals.userId || req.session.userId;
+    var supporterId = res.locals.supporterId;
+
+    db.app.notes.findOrCreate({
+        where: {
+            notes: body.notes,
+            isAdminShareable: body.shareable,
+            userUserId: userId,
+            researcherSupporterId: supporterId,
+            appointmentAppointmentId: body.appointmentId,
+            title: body.titl
+        },
+        defaults: {
+            notes: body.notes,
+            isAdminShareable: body.shareable,
+            userUserId: userId,
+            researcherSupporterId: supporterId,
+            appointmentAppointmentId: body.appointmentId,
+            title: body.titl
+        }
+    }).spread(function (foodLog, created) {
+        if (!(created)) {
+            message = {
+                'name': 'Failure',
+                'message': 'Note with the given details exists'
+            };
+            return res.status(401).json(message);
+        }
+        message = {
+            'name': 'Success',
+            'message': 'Note added'
+        };
+
+        //Add entry to notification table - for the supporter
+        var params = {};
+        var userId = res.locals.userId || req.session.userId;
+        params.userId = userId;
+        params.message = "Note added";
+        params.dateTimeSent = new Date().toISOString();
+        params.to = res.locals.supporterId;
+        params.from = userId;
+
+        db.app.notifications.findOrCreate({
+            where: {
+                userUserId: params.userId,
+                notificationMessage: params.message,
+                dateTimeSent: params.dateTimeSent,
+                from: params.from,
+                to: params.to
+            },
+            defaults: {
+                userUserId: params.userId,
+                notificationMessage: params.message,
+                dateTimeSent: params.dateTimeSent,
+                from: params.from,
+                to: params.to
+            }
+        }).spread(function (notification, created) {
+            if (!created)
+                message.notes = 'A note already exists with given data, couldn\'t send a notification to the supporter';
+            else
+                message.notes = 'Message log to the table';
+        }).catch(function (error) {
+            message.notes = 'A note already exists with given data, couldn\'t send a notification to the supporter';
+            message.error = util.inspect(error);
+        });
+
+        //end of notification logging
+
+
+        return res.json(message);
+    }).catch(function (error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t add note to the appointment',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
+    });
+
+
+});
+
+router.post('/updateNotes', userAuthenticate, function (req, res) {
+    var body = _.pick(req.body, 'notes', 'shareable', 'appointmentId', 'titl');
+
+    if (typeof body.notes !== 'string' || typeof body.shareable !== 'string' || typeof body.appointmentId !== 'string' || typeof body.titl !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        }
+        return res.status(400).send(message);
+    }
+    var userId = res.locals.userId || req.session.userId;
+    var supporterId = res.locals.supporterId;
+
+    db.app.notes.find({
+        where: {
+            notes: body.notes,
+            isAdminShareable: body.shareable,
+            userUserId: userId,
+            researcherSupporterId: supporterId,
+            appointmentAppointmentId: body.appointmentId,
+            title: body.titl
+        }
+    }).then(function (data) {
+        if (!_.isEmpty(data)) {
+            data.update({
+                notes: body.notes,
+                isAdminShareable: body.shareable,
+                userUserId: userId,
+                researcherSupporterId: supporterId,
+                appointmentAppointmentId: body.appointmentId,
+                title: body.titl
+            }).then(function (data1) {
+                console.log('data1: ' + data1);
+                message.name = 'Success';
+                message.message = 'Update to Note successful';
+                message.data = data1;
+
+                //Add entry to notification table - for the supporter
+                var params = {};
+
+                params.userId = userId;
+                params.message = "Note updated";
+                params.dateTimeSent = new Date().toISOString();
+                params.to = res.locals.supporterId;
+                params.from = userId;
+
+                db.app.notifications.findOrCreate({
+                    where: {
+                        userUserId: params.userId,
+                        notificationMessage: params.message,
+                        dateTimeSent: params.dateTimeSent,
+                        from: params.from,
+                        to: params.to
+                    },
+                    defaults: {
+                        userUserId: params.userId,
+                        notificationMessage: params.message,
+                        dateTimeSent: params.dateTimeSent,
+                        from: params.from,
+                        to: params.to
+                    }
+                }).spread(function (notification, created) {
+                    if (!created)
+                        message.notes = 'A note already exists with given data, couldn\'t send a notification to the supporter';
+                    else
+                        message.notes = 'Message log to the table';
+                }).catch(function (error) {
+                    message.notes = 'A note already exists with given data, couldn\'t send a notification to the supporter';
+                    message.error = util.inspect(error);
+                });
+
+                //end of notification logging
+
+                return res.json(message);
+            }).catch(function (error) {
+                message.name = 'Failure';
+                message.message = 'Error in updating the note';
+                message.error = util.inspect(error);
+                return res.status(404).send(message);
+            });
+        }
+    });
+});
+
+router.post('/deleteNotes', userAuthenticate, function (req, res) {
+    var body = _.pick(req.body, 'noteId');
+
+    if (typeof body.noteId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+    var userId = res.locals.userId || req.session.userId;
+    db.app.notes.find({
+        where: {
+            notesId: body.noteId
+        }
+    }).then(function (data) {
+        if (!_.isEmpty(data)) {
+            data.destroy();
+            message.name = 'Success';
+            message.message = 'Note deleted';
+
+            //Add entry to notification table - for the supporter
+            var params = {};
+
+            params.userId = userId;
+            params.message = "Note deleted";
+            params.dateTimeSent = new Date().toISOString();
+            params.to = res.locals.supporterId;
+            params.from = userId;
+
+            db.app.notifications.findOrCreate({
+                where: {
+                    userUserId: params.userId,
+                    notificationMessage: params.message,
+                    dateTimeSent: params.dateTimeSent,
+                    from: params.from,
+                    to: params.to
+                },
+                defaults: {
+                    userUserId: params.userId,
+                    notificationMessage: params.message,
+                    dateTimeSent: params.dateTimeSent,
+                    from: params.from,
+                    to: params.to
+                }
+            }).spread(function (notification, created) {
+                if (!created)
+                    message.weeklyLogMessage = 'A Note already exists with given data, couldn\'t send a notification to the supporter';
+                else
+                    message.weeklyLogMessage = 'Message log to the table';
+            }).catch(function (error) {
+                message.weeklyLogMessage = 'A Note already exists with given data, couldn\'t send a notification to the supporter';
+                message.error = util.inspect(error);
+            });
+
+            //end of notification logging
+
+            return res.json(message);
+        } else {
+            message.name = 'Failure';
+            message.message = 'Trying to delete the note which isn\'t there';
+            return res.status(404).json(message);
+        }
+    }).catch(function (error) {
+        message.name = 'Failure';
+        message.message = util.inspect(error);
+        return res.status(404).json(message);
+    });
+});
+
+router.get('/getAppointmentDetails', userAuthenticate, function (req, res) {
+    var userId = res.locals.userId || req.session.userId;
+    // var sqlQuery = "SELECT * FROM appointments INNER JOIN notes on notes.appointmentAppointmentId = appointments.appointmentId WHERE appointments.userUserId = '" + userId + "'";
+    // var sqlQuery1 = "SELECT * FROM appointments WHERE appointments.userUserId = '" + userId + "'";
+    // var sqlQuery2 = "SELECT * FROM notes WHERE notes.userUserId = '" + userId + "'";
+    // var sqlQuery = "SELECT DISTINCT appointments.appointmentId AS id, appointments.appointmentTime as dateTime, appointments.title as title, appointments.researcherSupporterId AS supporter, (SELECT GROUP_CONCAT(DISTINCT notesId , notes, isAdminShareable, title) FROM notes n WHERE n.appointmentAppointmentId = appointmentId) AS notes     FROM appointments INNER JOIN notes on notes.appointmentAppointmentId = appointments.appointmentId WHERE appointments.userUserId = '" + userId + "' GROUP BY appointments.appointmentId";
+    var sqlQuery = "SELECT DISTINCT a.appointmentId AS id, a.appointmentTime as dateTime, a.title as title, a.researcherSupporterId AS supporter, (SELECT JSON_OBJECT('id', notesId , 'notes', notes,'adminshared', isAdminShareable,'title', title) FROM notes n WHERE n.appointmentAppointmentId = a.appointmentId) AS notes  FROM appointments a INNER JOIN notes n on n.appointmentAppointmentId = a.appointmentId WHERE a.userUserId = '" + userId + "' GROUP BY a.appointmentId";
+    //var sqlQuery = "SELECT DISTINCT a.appointmentId AS id, a.appointmentTime as dateTime, a.title as title, a.researcherSupporterId AS supporter, row_to_json(n.notesId , n.notes, n.isAdminShareable, n.title) AS notes FROM appointments a INNER JOIN notes n on n.appointmentAppointmentId = a.appointmentId WHERE a.userUserId = '" + userId + "' GROUP BY a.appointmentId";
+    // console.log(sqlQuery1);
+    // console.log(sqlQuery2);
+    console.log(sqlQuery);
+
+    var resultsData = {};
+
+    db.sequelize.query(sqlQuery).spread(function (results, metadata) {
+
+        resultsData.appointments = results;
+
+        return res.json(resultsData);
+    }).catch(function (error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t get appointments',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
+    });
+});
+
+
+router.get('/getStepInfo', userAuthenticate, function (req, res) {
+    var userId = res.locals.userId || req.session.userId;
+
+    var sqlQuery = "SELECT DISTINCT r.responseId AS id, s.description as stepname, p.supporterId as assignedby, p.status AS status, r.dateUpdated AS responseDateTime, s.checkList AS checkList,r.comments AS comments, r.userResponse AS responseStatus, p.dateUpdated AS progressDateTime  FROM steps s INNER JOIN responses r ON s.stepId = r.stepId INNER JOIN progresses p ON p.responseId = r.responseId WHERE r.userId = '" + userId + "'";
+
+    console.log(sqlQuery);
+
+    var resultsData = {};
+
+    db.sequelize.query(sqlQuery).spread(function (results, metadata) {
+
+        resultsData.steps = results;
+
+        return res.json(resultsData);
+    }).catch(function (error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t get steps',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
+    });
+});
 module.exports = router;

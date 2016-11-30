@@ -362,6 +362,10 @@ module.exports = function(sequelize, DataTypes) {
             type: DataTypes.ENUM,
             values: ['yes', 'no'],
             defaultValue: 'no'
+        },
+        title: {
+            type: DataTypes.STRING,
+            allowNull: true
         }
     }, {
             timestamps: true,
@@ -528,11 +532,11 @@ module.exports = function(sequelize, DataTypes) {
             autoIncrement: true,
         },
         description: {
-            type: DataTypes.STRING(10000),
+            type: DataTypes.STRING,
             allowNull: false
         },
         checkList: {
-            type: DataTypes.STRING,
+            type: DataTypes.STRING(10000),
             allowNull: false
         },
         createdAt: {
