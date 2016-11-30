@@ -28,7 +28,7 @@ router.get('/login', function (req, res) {
         return res.status(400).send(message);
     }
     db.app.users.findOne({
-        attributes: [['userId', 'userId'], ['salt', 'salt'], ['passwordHash', 'passwordHash'], ['isActive', 'isActive'], ['age', 'age'], ['score', 'score'], ['logNotifications', 'logNotifications'], ['researcherSupporterId', 'researcherSupporterId']],
+        attributes: [['userId', 'userId'], ['salt', 'salt'], ['passwordHash', 'passwordHash'], ['isActive', 'isActive'], ['age', 'age'], ['score', 'score'], ['logNotifications', 'logNotifications'], ['appNotifications', 'appNotifications'], ['quickLog', 'quickLog'], ['sendMotivationalMessages', 'sendMotivationalMessages'], ['researcherSupporterId', 'researcherSupporterId']],
         where: {
             userId: query.userId
         }
@@ -894,15 +894,57 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
             result.upcomingNotification = "No upcoming appointments"
         }
     }).catch(function (error) {
-        message = {
-            'name': error.name,
-            'message': util.inspect(error)
-        };
+        message.name = 'Failure';
+        message.upcomingNotification = util.inspect(error);
         console.log(error);
-        return res.status(400).json(message);
     });
 
     //dailylogtoday
+    var sqlQuery = "SELECT COUNT(DATE(dateTimeLogged)) AS dailylogtoday FROM dailyFoodLogs WHERE userUserId = '" + userId + "' AND DATE(dateTimeLogged) = '" + new Date().toISOString() + "'";
+    db.sequelize.query(sqlQuery).spread(function (results, metadata) {
+        resultsData.dailylogtoday = results.dailylogtoday;
+    }).catch(function (error) {
+        message.name = 'Failure';
+        message.dailylogtoday = util.inspect(error);
+    });
+
+    //stats
+    db.app.weeklyLog.findAll({
+        attributes: [['goodDays', 'goodDays'], ['dateAdded', 'dateTime'], ['binges', 'binge']],
+        where: {
+            userUserId: userId
+        }
+    }).then(function (weeklyLog) {
+        if (!_.isEmpty(weeklyLog)) {
+            result.stats = weeklyLog;
+        } else {
+            result.stats = [];
+        }
+    }).catch(function (error) {
+        message.name = 'Failure';
+        message.stats = util.inspect(error);
+    });
+
+    //weight
+    db.app.weeklyLog.findAll({
+        attributes: [['weight', 'weight'], ['dateAdded', 'dateTime']],
+        where: {
+            userUserId: userId
+        }
+    }).then(function (weeklyLog) {
+        if (!_.isEmpty(weeklyLog)) {
+            result.weight = weeklyLog;
+        } else {
+            result.weight = [];
+        }
+        return res.json(result);
+    }).catch(function (error) {
+        message.name = 'Failure';
+        message.weight = util.inspect(error);
+        return res.status(400).send(message);
+    });
+
+
 
 });
 
