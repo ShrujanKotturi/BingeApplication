@@ -250,7 +250,8 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
 router.post('/messagesToUser', supporterAuthenticate, function (req, res) {
     var body = _.pick(req.body, 'message', 'dateTimeSent', 'to', 'userId');
     console.log(req.session);
-    console.log(body);
+    
+    console.log("messagesToUser: " +body);
     if (typeof body.message !== 'string' || typeof body.dateTimeSent !== 'string' || typeof body.to !== 'string' || typeof body.userId !== 'string') {
         message = {
             'name': 'Error',
