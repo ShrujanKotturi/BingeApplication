@@ -502,7 +502,7 @@ router.get('/getAllNotifications', supporterAuthenticate, function (req, res) {
 
     var query = _.pick(req.query, 'supporterId');
     console.log(req.session);
-    if (typeof body.supporterId !== 'string') {
+    if (typeof query.supporterId !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -533,6 +533,94 @@ router.get('/getAllNotifications', supporterAuthenticate, function (req, res) {
         return res.status(400).json(message);
     });
 });
+
+//Steps, Progress, Response
+router.post('/assignSteps', supporterAuthenticate, function (req, res) {
+    console.log(req.session);
+    var responseId;
+    var body = _.pick(req.body, 'stepId', 'userId', 'logDateTime', 'status', 'supporterId');
+
+    if (typeof body.stepId !== 'string' || typeof body.userId !== 'string' || typeof body.logDateTime !== 'string' || typeof body.status !== 'string' || typeof body.supporterId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.response.findOrCreate({
+        where: {
+            stepId: body.stepId,
+            userId: body.userId
+        },
+        defaults: {
+            stepId: body.stepId,
+            userId: body.userId,
+            logDateTime: body.logDateTime,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            userResponse: ""
+        }
+    }).spread(function (response, created) {
+        console.log(util.inspect(response.responseId));
+        responseId = response.responseId;
+
+        if (!(created)) {
+            message = {
+                'name': 'Failure',
+                'responseInfo': 'Log in response table exist for the user with the same step'
+            };
+            return res.status(401).json(message);
+        }
+        message = {
+            'name': 'Success',
+            'message': 'Log added to response table'
+        };
+
+        db.app.progress.findOrCreate({
+            where: {
+                supporterId: body.stepId,
+                userId: body.userId,
+                status: body.status,
+                responseId: responseId
+            },
+            defaults: {
+                supporterId: body.stepId,
+                userId: body.userId,
+                status: body.status,
+                responseId: responseId,
+                progressDateTime: body.logDateTime,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+        }).spread(function (response, created) {
+            if (!(created)) {
+                message.progress = "Already a step with the same status exists for the User";
+                return res.status(401).json(message);
+            }
+            message.progress = "User has been assigned a step";
+            return res.send(message);
+
+        }).catch(function (error) {
+            message = {
+                'name': 'Failure',
+                'message': 'Couldn\'t create log to the response table',
+                'error': util.inspect(error)
+            };
+            return res.status(400).send(message);
+        });
+
+    }).catch(function (error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t create log to the response table',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
+    });
+
+});
+
 
 router.post('/logout', function (req, res) {
     var body = _.pick(req.body, 'supporterId');
