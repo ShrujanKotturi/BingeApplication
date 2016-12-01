@@ -16,7 +16,7 @@ var router = express.Router();
 var db = require('../db');
 var message = {};
 
-
+//Profile
 router.get('/login', function (req, res) {
     var query = _.pick(req.query, 'supporterId', 'password');
     if (typeof query.supporterId !== 'string' || typeof query.password !== 'string') {
@@ -72,6 +72,48 @@ router.get('/login', function (req, res) {
         return res.status(400).json(message);
     });
 });
+
+router.post('/changePassword', supporterAuthenticate, function (req, res) {
+    console.log(req.session);
+    var responseId;
+    var body = _.pick(req.body, 'userId', 'password');
+
+    if (typeof body.userId !== 'string' || typeof body.password !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.users.find({
+        where: {
+            userId: body.userId,            
+        }
+    }).then(function (data) {
+        if (!_.isEmpty(data)) {
+            data.update({
+                passwordHash: bcrypt.hashSync(body.password, bcrypt.genSaltSync(10))
+            }).then(function (data1) {
+                console.log('data1: ' + util.inspect(data1));
+                message.name = 'Success';
+                message.message = 'Update to password successful';
+                message.data = data1;
+
+                return res.json(message);
+            }).catch(function (error) {
+                console.error('Error in updating the user password ' + erro);
+                message.name = 'Failure';
+                message.message = 'Error in updating the user password';
+                message.error = util.inspect(error);
+                return res.status(404).send(message);
+            });
+        }
+    });
+
+
+});
+
 
 router.get('/getAllUsers', supporterAuthenticate, function (req, res) {
     console.log(req.session);
@@ -620,6 +662,76 @@ router.post('/assignSteps', supporterAuthenticate, function (req, res) {
     });
 
 });
+
+router.get('/getAllSteps', supporterAuthenticate, function (req, res) {
+    var query = _.pick(req.query, 'userId');
+    console.log(req.session);
+    if (typeof query.userId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    var sqlQuery = "SELECT p.progressId AS Id, p.status, p.supporterId, p.progressDateTime AS stepAssignedOn, r.stepId, r.userResponse AS userResponse FROM progresses p INNER JOIN responses r ON r.responseId = p.responseId WHERE p.userId = '" + query.userId + "'";
+    console.log(sqlQuery);
+    var resultsData = {};
+    db.sequelize.query(sqlQuery).spread(function (results, metadata) {
+        resultsData.steps = results;
+        return res.json(resultsData);
+    }).catch(function (error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t get steps info',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
+    });
+});
+
+router.post('/updateProgress', supporterAuthenticate, function (req, res) {
+    console.log(req.session);
+    var responseId;
+    var body = _.pick(req.body, 'progressId', 'status');
+
+    if (typeof body.progressId !== 'string' || typeof body.status !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.progress.find({
+        where: {
+            progressId: body.progressId
+        }
+    }).then(function (data) {
+        if (!_.isEmpty(data)) {
+            data.update({
+                status: body.status
+            }).then(function (data1) {
+                console.log('data1: ' + util.inspect(data1);
+                message.name = 'Success';
+                message.message = 'Updated step progress successfully';
+                message.data = data1;
+
+                return res.json(message);
+            }).catch(function (error) {
+                console.error('Error in updating the user step progress ' + erro);
+                message.name = 'Failure';
+                message.message = 'Error in updating the user step progress';
+                message.error = util.inspect(error);
+                return res.status(404).send(message);
+            });
+        }
+    });
+
+
+});
+
 
 
 router.post('/logout', function (req, res) {
