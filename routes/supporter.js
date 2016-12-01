@@ -235,128 +235,7 @@ router.get('/getUserPhysicalLog', supporterAuthenticate, function (req, res) {
     });
 });
 
-router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'appointmentTime', 'title', 'comments', 'createdOn', 'userId', 'supporterId');
-    console.log(req.session);
-    if (typeof body.appointmentTime !== 'string' || typeof body.title !== 'string' || typeof body.comments !== 'string' || typeof body.createdOn !== 'string' || typeof body.userId !== 'string' || typeof body.supporterId !== 'string') {
-        message = {
-            'name': 'Error',
-            'message': 'Problem with query parameters'
-        };
-        console.log(message);
-        return res.status(400).send(message);
-    }
 
-    db.app.appointments.findOrCreate({
-        where: {
-            userUserId: body.userId,
-            appointmentTime: body.appointmentTime,
-            title: body.title,
-            comments: body.comments,
-            createdOn: body.createdOn,
-            researcherSupporterId: req.session.supporterId || body.supporterId
-        },
-        defaults: {
-            userUserId: body.userId,
-            appointmentTime: body.appointmentTime,
-            title: body.title,
-            comments: body.comments,
-            createdOn: body.createdOn,
-            researcherSupporterId: req.session.supporterId || body.supporterId
-        }
-    }).spread(function (foodLog, created) {
-        if (!(created)) {
-            message = {
-                'name': 'Failure',
-                'message': 'Appointment already exists with the same date time'
-            };
-            return res.status(401).json(message);
-        }
-        message = {
-            'name': 'Success',
-            'message': 'Appointment created'
-        };
-
-        var notificationToUser = "An appointment is schedule at " + body.appointmentTime + ", check with your supporter";
-
-        db.app.users.findOne({
-            attributes: [['appNotifications', 'Permission']],
-            where: {
-                userId: body.userId,
-                isActive: true
-            }
-        }).then(function (user) {
-            if (!_.isEmpty(user)) {
-                console.log('if: ' + user.dataValues.Permission);
-                if (user.dataValues.Permission === 1) {
-                    db.app.userDeviceMapper.findOne({
-                        attributes: [['fcmToken', 'Token']],
-                        where: {
-                            userUserId: body.userId
-                        }
-                    }).then(function (deviceMapper) {
-                        if (!_.isEmpty(deviceMapper)) {
-                            var payloadOk = {
-                                to: deviceMapper.dataValues.Token,
-                                priority: 'high',
-                                notification: {
-                                    title: 'Women Health Project',
-                                    body: notificationToUser
-                                }
-                            };
-                            fcmCli.send(payloadOk, function (err, result) {
-                                if (err) {
-                                    console.error(err)
-                                } else {
-                                    console.log(result);
-                                    message.fcm = 'Message in-transit';
-                                    message.result = result;
-                                }
-                            });
-
-                        } else {
-                            message.mapperError = 'Couldn\'t find the Device Token associated with the User';
-                        }
-                    }).catch(function (error) {
-                        message.error = error.name;
-                        message.error_message = util.inspect(error);
-                        console.log(error);
-                        return res.status(400).json(message);
-                    });
-
-                    return res.json(message);
-
-
-                } else {
-                    message.name = 'Failure';
-                    message.message = "Not authorized to send Messages to the Participant";
-                    return res.status(401).send(message);
-                }
-            } else {
-                message.name = 'Failure';
-                message.message = "User doesn't exists/User isn't active";
-                return res.status(404).send(message);
-            }
-        }).catch(function (error) {
-            message = {
-                'name': error.name,
-                'message': util.inspect(error)
-            };
-            console.log(error);
-            return res.status(400).json(message);
-        });
-
-        return res.json(message);
-    }).catch(function (error) {
-        message = {
-            'name': 'Failure',
-            'message': 'Couldn\'t create appointment',
-            'error': util.inspect(error)
-        };
-        return res.status(400).send(message);
-    });
-
-});
 
 //Messages
 router.post('/messagesToUser', supporterAuthenticate, function (req, res) {
@@ -572,6 +451,130 @@ router.get('/getAllParticipantAppointments', supporterAuthenticate, function (re
 });
 
 //delete appointment doesn't notification
+
+router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
+    var body = _.pick(req.body, 'appointmentTime', 'title', 'comments', 'createdOn', 'userId', 'supporterId');
+    console.log(req.session);
+    if (typeof body.appointmentTime !== 'string' || typeof body.title !== 'string' || typeof body.comments !== 'string' || typeof body.createdOn !== 'string' || typeof body.userId !== 'string' || typeof body.supporterId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.appointments.findOrCreate({
+        where: {
+            userUserId: body.userId,
+            appointmentTime: body.appointmentTime,
+            title: body.title,
+            comments: body.comments,
+            createdOn: body.createdOn,
+            researcherSupporterId: req.session.supporterId || body.supporterId
+        },
+        defaults: {
+            userUserId: body.userId,
+            appointmentTime: body.appointmentTime,
+            title: body.title,
+            comments: body.comments,
+            createdOn: body.createdOn,
+            researcherSupporterId: req.session.supporterId || body.supporterId
+        }
+    }).spread(function (foodLog, created) {
+        if (!(created)) {
+            message = {
+                'name': 'Failure',
+                'message': 'Appointment already exists with the same date time'
+            };
+            return res.status(401).json(message);
+        }
+        message = {
+            'name': 'Success',
+            'message': 'Appointment created'
+        };
+
+        var notificationToUser = "An appointment is schedule at " + body.appointmentTime + ", check with your supporter";
+
+        db.app.users.findOne({
+            attributes: [['appNotifications', 'Permission']],
+            where: {
+                userId: body.userId,
+                isActive: true
+            }
+        }).then(function (user) {
+            if (!_.isEmpty(user)) {
+                console.log('if: ' + user.dataValues.Permission);
+                if (user.dataValues.Permission === 1) {
+                    db.app.userDeviceMapper.findOne({
+                        attributes: [['fcmToken', 'Token']],
+                        where: {
+                            userUserId: body.userId
+                        }
+                    }).then(function (deviceMapper) {
+                        if (!_.isEmpty(deviceMapper)) {
+                            var payloadOk = {
+                                to: deviceMapper.dataValues.Token,
+                                priority: 'high',
+                                notification: {
+                                    title: 'Women Health Project',
+                                    body: notificationToUser
+                                }
+                            };
+                            fcmCli.send(payloadOk, function (err, result) {
+                                if (err) {
+                                    console.error(err)
+                                } else {
+                                    console.log(result);
+                                    message.fcm = 'Message in-transit';
+                                    message.result = result;
+                                }
+                            });
+
+                        } else {
+                            message.mapperError = 'Couldn\'t find the Device Token associated with the User';
+                        }
+                    }).catch(function (error) {
+                        message.error = error.name;
+                        message.error_message = util.inspect(error);
+                        console.log(error);
+                        return res.status(400).json(message);
+                    });
+
+                    return res.json(message);
+
+
+                } else {
+                    message.name = 'Failure';
+                    message.message = "Not authorized to send Messages to the Participant";
+                    return res.status(401).send(message);
+                }
+            } else {
+                message.name = 'Failure';
+                message.message = "User doesn't exists/User isn't active";
+                return res.status(404).send(message);
+            }
+        }).catch(function (error) {
+            message = {
+                'name': error.name,
+                'message': util.inspect(error)
+            };
+            console.log(error);
+            return res.status(400).json(message);
+        });
+
+        return res.json(message);
+    }).catch(function (error) {
+        message = {
+            'name': 'Failure',
+            'message': 'Couldn\'t create appointment',
+            'error': util.inspect(error)
+        };
+        return res.status(400).send(message);
+    });
+
+});
+
 router.post('/deleteAppointment', supporterAuthenticate, function (req, res) {
     console.log(req.session);
     var body = _.pick(req.body, 'appointmentId');
