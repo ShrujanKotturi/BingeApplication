@@ -713,7 +713,7 @@ router.post('/updateProgress', supporterAuthenticate, function (req, res) {
             data.update({
                 status: body.status
             }).then(function (data1) {
-                console.log('data1: ' + util.inspect(data1);
+                console.log('data1: ' + util.inspect(data1));
                 message.name = 'Success';
                 message.message = 'Updated step progress successfully';
                 message.data = data1;

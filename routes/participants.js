@@ -281,7 +281,7 @@ router.get('/getFoodLog', userAuthenticate, function (req, res) {
         attributes: [['dailyFoodLogId', 'Daily Food Log Id'], ['foodConsumedLog', 'Food Consumed'], ['foodConsumedURL', 'Image'], 'latitude', 'longitude', ['dateTimeLogged', 'Logged Time'], ['feelingBinge', 'Feeling Binge'], ['feelingVomiting', 'Feeling Vomiting'], ['returnType', 'Image Type']],
         where: {
             userUserId: userId
-           // dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
+            // dateTimeLogged: db.sequelize.where(db.sequelize.fn('date', db.sequelize.col('dateTimeLogged')), '=', query.date)
         }
     }).then(function (supporters) {
         results.Foodlogs = supporters;
@@ -600,6 +600,44 @@ router.post('/updateQuickLog', userAuthenticate, function (req, res) {
                 message.name = 'Success';
                 message.message = 'Update to food log successful';
                 message.data = data1;
+
+                //Add entry to notification table - for the supporter
+                var params = {};
+
+                params.userId = userId;
+                params.message = "Quick food log updated";
+                params.dateTimeSent = new Date().toISOString();
+                params.to = res.locals.supporterId;
+                params.from = userId;
+
+                db.app.notifications.findOrCreate({
+                    where: {
+                        userUserId: params.userId,
+                        notificationMessage: params.message,
+                        dateTimeSent: params.dateTimeSent,
+                        from: params.from,
+                        to: params.to
+                    },
+                    defaults: {
+                        userUserId: params.userId,
+                        notificationMessage: params.message,
+                        dateTimeSent: params.dateTimeSent,
+                        from: params.from,
+                        to: params.to
+                    }
+                }).spread(function (notification, created) {
+                    if (!created)
+                        message.quickLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+                    else
+                        message.quickLogMessage = 'Message log to the table';
+                }).catch(function (error) {
+                    message.quickLogMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
+                    message.error = util.inspect(error);
+                });
+
+                //end of notification logging
+
+
                 return res.json(message);
             }).catch(function (error) {
                 console.error('Error in updating the user device : ' + error);
@@ -871,7 +909,7 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
         message.name = 'Failure';
         message.noOfStepsFinished = util.inspect(error);
     });
-    
+
 
     //upcomingNotification
     result.upcomingNotification = "No upcoming appointments"
@@ -1479,6 +1517,7 @@ router.post('/deleteNotes', userAuthenticate, function (req, res) {
     });
 });
 
+//Appointments
 router.get('/getAppointmentDetails', userAuthenticate, function (req, res) {
     var userId = res.locals.userId || req.session.userId;
     var sqlQuery = "SELECT * FROM appointments INNER JOIN notes on notes.appointmentAppointmentId = appointments.appointmentId WHERE appointments.userUserId = '" + userId + "'";
@@ -1508,6 +1547,7 @@ router.get('/getAppointmentDetails', userAuthenticate, function (req, res) {
     });
 });
 
+//Steps
 router.get('/getStepInfo', userAuthenticate, function (req, res) {
     var userId = res.locals.userId || req.session.userId;
 
@@ -1530,6 +1570,48 @@ router.get('/getStepInfo', userAuthenticate, function (req, res) {
         };
         return res.status(400).send(message);
     });
+});
+
+router.post('/updateResponse', userAuthenticate, function (req, res) {
+    console.log(req.session);
+    var responseId;
+    var body = _.pick(req.body, 'responseId', 'comments', 'response');
+
+    if (typeof body.responseId !== 'string' || typeof body.comments !== 'string' || typeof body.response !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        return res.status(400).send(message);
+    }
+
+    db.app.response.find({
+        where: {
+            responseId: body.responseId
+        }
+    }).then(function (data) {
+        if (!_.isEmpty(data)) {
+            data.update({
+                comments: body.comments,
+                userResponse: body.response
+            }).then(function (data1) {
+                console.log('data1: ' + util.inspect(data1));
+                message.name = 'Success';
+                message.message = 'Updated user response successfully';
+                message.data = data1;
+
+                return res.json(message);
+            }).catch(function (error) {
+                console.error('Error in updating the user response ' + erro);
+                message.name = 'Failure';
+                message.message = 'Error in updating the user responses';
+                message.error = util.inspect(error);
+                return res.status(404).send(message);
+            });
+        }
+    });
+
+
 });
 
 
