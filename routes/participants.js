@@ -1278,6 +1278,8 @@ router.post('/addNotes', userAuthenticate, function (req, res) {
             'name': 'Error',
             'message': 'Problem with query parameters'
         };
+        console.log('message: ' +message);
+        console.log('body: ' +util.inspect(body));
         return res.status(400).send(message);
     }
     var userId = res.locals.userId || req.session.userId;
