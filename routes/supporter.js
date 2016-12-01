@@ -88,7 +88,7 @@ router.post('/changePassword', supporterAuthenticate, function (req, res) {
 
     db.app.users.find({
         where: {
-            userId: body.userId,            
+            userId: body.userId,
         }
     }).then(function (data) {
         if (!_.isEmpty(data)) {
@@ -276,6 +276,76 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
             'name': 'Success',
             'message': 'Appointment created'
         };
+
+        var notificationToUser = "An appointment is schedule at " + body.appointmentTime + ", check with your supporter";
+
+        db.app.users.findOne({
+            attributes: [['appNotifications', 'Permission']],
+            where: {
+                userId: body.userId,
+                isActive: true
+            }
+        }).then(function (user) {
+            if (!_.isEmpty(user)) {
+                console.log('if: ' + user.dataValues.Permission);
+                if (user.dataValues.Permission === 1) {
+                    db.app.userDeviceMapper.findOne({
+                        attributes: [['fcmToken', 'Token']],
+                        where: {
+                            userUserId: body.userId
+                        }
+                    }).then(function (deviceMapper) {
+                        if (!_.isEmpty(deviceMapper)) {
+                            var payloadOk = {
+                                to: deviceMapper.dataValues.Token,
+                                priority: 'high',
+                                notification: {
+                                    title: 'Women Health Project',
+                                    body: notificationToUser
+                                }
+                            };
+                            fcmCli.send(payloadOk, function (err, result) {
+                                if (err) {
+                                    console.error(err)
+                                } else {
+                                    console.log(result);
+                                    message.fcm = 'Message in-transit';
+                                    message.result = result;
+                                }
+                            });
+
+                        } else {
+                            message.mapperError = 'Couldn\'t find the Device Token associated with the User';
+                        }
+                    }).catch(function (error) {
+                        message.error = error.name;
+                        message.error_message = util.inspect(error);
+                        console.log(error);
+                        return res.status(400).json(message);
+                    });
+
+                    return res.json(message);
+
+
+                } else {
+                    message.name = 'Failure';
+                    message.message = "Not authorized to send Messages to the Participant";
+                    return res.status(401).send(message);
+                }
+            } else {
+                message.name = 'Failure';
+                message.message = "User doesn't exists/User isn't active";
+                return res.status(404).send(message);
+            }
+        }).catch(function (error) {
+            message = {
+                'name': error.name,
+                'message': util.inspect(error)
+            };
+            console.log(error);
+            return res.status(400).json(message);
+        });
+
         return res.json(message);
     }).catch(function (error) {
         message = {
@@ -501,6 +571,7 @@ router.get('/getAllParticipantAppointments', supporterAuthenticate, function (re
     });
 });
 
+//delete appointment doesn't notification
 router.post('/deleteAppointment', supporterAuthenticate, function (req, res) {
     console.log(req.session);
     var body = _.pick(req.body, 'appointmentId');
@@ -523,6 +594,9 @@ router.post('/deleteAppointment', supporterAuthenticate, function (req, res) {
             data.destroy();
             message.name = 'Success';
             message.message = 'Appointment deleted';
+
+
+
             return res.json(message);
         }
         else {
@@ -641,6 +715,76 @@ router.post('/assignSteps', supporterAuthenticate, function (req, res) {
                 return res.status(401).json(message);
             }
             message.progress = "User has been assigned a step";
+
+            var notificationToUser = "You have been assigned a Step -" + body.stepId + " by the supporter";
+
+            db.app.users.findOne({
+                attributes: [['appNotifications', 'Permission']],
+                where: {
+                    userId: body.userId,
+                    isActive: true
+                }
+            }).then(function (user) {
+                if (!_.isEmpty(user)) {
+                    console.log('if: ' + user.dataValues.Permission);
+                    if (user.dataValues.Permission === 1) {
+                        db.app.userDeviceMapper.findOne({
+                            attributes: [['fcmToken', 'Token']],
+                            where: {
+                                userUserId: body.userId
+                            }
+                        }).then(function (deviceMapper) {
+                            if (!_.isEmpty(deviceMapper)) {
+                                var payloadOk = {
+                                    to: deviceMapper.dataValues.Token,
+                                    priority: 'high',
+                                    notification: {
+                                        title: 'Women Health Project',
+                                        body: notificationToUser
+                                    }
+                                };
+                                fcmCli.send(payloadOk, function (err, result) {
+                                    if (err) {
+                                        console.error(err)
+                                    } else {
+                                        console.log(result);
+                                        message.fcm = 'Message in-transit';
+                                        message.result = result;
+                                    }
+                                });
+
+                            } else {
+                                message.mapperError = 'Couldn\'t find the Device Token associated with the User';
+                            }
+                        }).catch(function (error) {
+                            message.error = error.name;
+                            message.error_message = util.inspect(error);
+                            console.log(error);
+                            return res.status(400).json(message);
+                        });
+
+                        return res.json(message);
+
+
+                    } else {
+                        message.name = 'Failure';
+                        message.message = "Not authorized to send Messages to the Participant";
+                        return res.status(401).send(message);
+                    }
+                } else {
+                    message.name = 'Failure';
+                    message.message = "User doesn't exists/User isn't active";
+                    return res.status(404).send(message);
+                }
+            }).catch(function (error) {
+                message = {
+                    'name': error.name,
+                    'message': util.inspect(error)
+                };
+                console.log(error);
+                return res.status(400).json(message);
+            });
+
             return res.send(message);
 
         }).catch(function (error) {

@@ -13,7 +13,6 @@ var router = express.Router();
 var db = require('../db');
 var message = {};
 
-
 router.get('/login', function (req, res) {
     var query = _.pick(req.query, 'adminId', 'password');
     if (typeof query.adminId !== 'string' || typeof query.password !== 'string') {
@@ -265,7 +264,8 @@ router.get('/getAllSupporters', adminAuthenticate, function (req, res) {
     db.app.researchers.findAll({
         attributes: [['supporterId', 'Supporter Id'], ['contactNumber', 'Contact Number'], ['createdAt', 'Created Date']],
         where: {
-            isAdmin: false
+            isAdmin: false,
+            isActive: true
         }
     }).then(function (supporters) {
         if (!_.isEmpty(supporters))

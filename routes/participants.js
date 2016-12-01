@@ -1520,7 +1520,7 @@ router.post('/deleteNotes', userAuthenticate, function (req, res) {
 //Appointments
 router.get('/getAppointmentDetails', userAuthenticate, function (req, res) {
     var userId = res.locals.userId || req.session.userId;
-    var sqlQuery = "SELECT * FROM appointments INNER JOIN notes on notes.appointmentAppointmentId = appointments.appointmentId WHERE appointments.userUserId = '" + userId + "'";
+    var sqlQuery = "SELECT * FROM appointments LEFT OUTER JOIN notes on notes.appointmentAppointmentId = appointments.appointmentId WHERE appointments.userUserId = '" + userId + "'";
     // var sqlQuery1 = "SELECT * FROM appointments WHERE appointments.userUserId = '" + userId + "'";
     // var sqlQuery2 = "SELECT * FROM notes WHERE notes.userUserId = '" + userId + "'";
     // var sqlQuery = "SELECT DISTINCT appointments.appointmentId AS id, appointments.appointmentTime as dateTime, appointments.title as title, appointments.researcherSupporterId AS supporter, (SELECT GROUP_CONCAT(DISTINCT notesId , notes, isAdminShareable, title) FROM notes n WHERE n.appointmentAppointmentId = appointmentId) AS notes     FROM appointments INNER JOIN notes on notes.appointmentAppointmentId = appointments.appointmentId WHERE appointments.userUserId = '" + userId + "' GROUP BY appointments.appointmentId";
