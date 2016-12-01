@@ -631,7 +631,8 @@ router.get('/getAllNotifications', supporterAuthenticate, function (req, res) {
         attributes: [['notificationId', 'Id'], ['notificationMessage', 'Message'], ['dateTimeSent', 'dateTimeSent'], ['from', 'from']],
         where: {
             to: req.session.supporterId || query.supporterId
-        }
+        },
+        order: [['dateTimeSent', 'DESC']]
     }).then(function (notifications) {
         if (!_.isEmpty(notifications)) {
             return res.json(notifications);
