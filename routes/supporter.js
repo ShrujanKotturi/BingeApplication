@@ -194,9 +194,9 @@ router.get('/getUserPhysicalLog', supporterAuthenticate, function (req, res) {
 });
 
 router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'appointmentTime', 'title', 'comments', 'createdOn', 'userId');
+    var body = _.pick(req.body, 'appointmentTime', 'title', 'comments', 'createdOn', 'userId', 'supporterId');
     console.log(req.session);
-    if (typeof body.appointmentTime !== 'string' || typeof body.title !== 'string' || typeof body.comments !== 'string' || typeof body.createdOn !== 'string' || typeof body.userId !== 'string') {
+    if (typeof body.appointmentTime !== 'string' || typeof body.title !== 'string' || typeof body.comments !== 'string' || typeof body.createdOn !== 'string' || typeof body.userId !== 'string' || typeof body.supporterId !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -212,7 +212,7 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
             title: body.title,
             comments: body.comments,
             createdOn: body.createdOn,
-            researcherSupporterId: req.session.supporterId
+            researcherSupporterId: req.session.supporterId || body.supporterId
         },
         defaults: {
             userUserId: body.userId,
@@ -220,7 +220,7 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
             title: body.title,
             comments: body.comments,
             createdOn: body.createdOn,
-            researcherSupporterId: req.session.supporterId
+            researcherSupporterId: req.session.supporterId || body.supporterId
         }
     }).spread(function (foodLog, created) {
         if (!(created)) {
@@ -248,11 +248,11 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
 
 //Messages
 router.post('/messagesToUser', supporterAuthenticate, function (req, res) {
-    var body = _.pick(req.body, 'message', 'dateTimeSent', 'to', 'userId');
+    var body = _.pick(req.body, 'message', 'dateTimeSent', 'to', 'userId', 'supporterId');
     console.log(req.session);
 
     console.log("messagesToUser: " + util.inspect(body));
-    if (typeof body.message !== 'string' || typeof body.dateTimeSent !== 'string' || typeof body.to !== 'string' || typeof body.userId !== 'string') {
+    if (typeof body.message !== 'string' || typeof body.dateTimeSent !== 'string' || typeof body.to !== 'string' || typeof body.userId !== 'string' || typeof body.supporterId !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -276,14 +276,14 @@ router.post('/messagesToUser', supporterAuthenticate, function (req, res) {
                         userUserId: body.userId,
                         notificationMessage: body.message,
                         dateTimeSent: body.dateTimeSent,
-                        from: req.session.supporterId,
+                        from: req.session.supporterId || body.supporterId,
                         to: body.to
                     },
                     defaults: {
                         userUserId: body.userId,
                         notificationMessage: body.message,
                         dateTimeSent: body.dateTimeSent,
-                        from: req.session.supporterId,
+                        from: req.session.supporterId || body.supporterId,
                         to: body.to
                     }
                 }).spread(function (notification, created) {
@@ -499,10 +499,22 @@ router.post('/deleteAppointment', supporterAuthenticate, function (req, res) {
 });
 
 router.get('/getAllNotifications', supporterAuthenticate, function (req, res) {
+
+    var query = _.pick(req.query, 'supporterId');
+    console.log(req.session);
+    if (typeof body.supporterId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
     db.app.notifications.findAll({
         attributes: [['notificationId', 'Id'], ['notificationMessage', 'Message'], ['dateTimeSent', 'dateTimeSent'], ['from', 'from']],
         where: {
-            to: req.session.supporterId
+            to: req.session.supporterId || query.supporterId
         }
     }).then(function (notifications) {
         if (!_.isEmpty(notifications)) {
