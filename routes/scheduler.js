@@ -1,5 +1,6 @@
-var db = require('../db');
-var message = {};
+var db = require('../db'),
+    message = {},
+    util = require('util');
 
 function run() {
 
