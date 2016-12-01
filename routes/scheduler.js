@@ -1,4 +1,5 @@
 var db = require('../db');
+var message = {};
 
 function run() {
 
