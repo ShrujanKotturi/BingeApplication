@@ -13,9 +13,10 @@ function run() {
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
         console.log(util.inspect(results));
         console.log("These users haven\'t logged the daily logs " + util.inspect(results[0]));
-        result.users = results[0];
+
         var notificationToUser = "You haven\'t logged your daily food today. Please log it";
         for (var i = 0; i < results.length; i++) {
+            console.log("length : " + results.length);
             console.log("Result : " + util.inspect(results[i]));
             var payloadOk = {
                 to: results[i].Token,
