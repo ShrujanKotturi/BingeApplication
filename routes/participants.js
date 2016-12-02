@@ -955,7 +955,7 @@ router.get('/dashboard', userAuthenticate, function (req, res) {
 
     //dailylogtoday
     result.dailylogtoday = 0;
-    var sqlQuery = "SELECT COUNT(DATE(dateTimeLogged)) AS dailylogtoday FROM dailyFoodLogs WHERE userUserId = '" + userId + "' AND DATE(dateTimeLogged) = '" + new Date().getFullYear() + "-" + (new Date().getMonth() + 1) + "-" + new Date().getDay() + "'";
+    var sqlQuery = "SELECT COUNT(DATE(dateTimeLogged)) AS dailylogtoday FROM dailyFoodLogs WHERE userUserId = '" + userId + "' AND DATE(dateTimeLogged) = '" + new Date().getFullYear() + "-" + (new Date().getMonth() + 1) + "-" + new Date().getDate() + "'";
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
         console.log(util.inspect(results[0].dailylogtoday));
         result.dailylogtoday = results[0].dailylogtoday;

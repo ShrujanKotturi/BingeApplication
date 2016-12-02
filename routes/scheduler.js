@@ -8,11 +8,11 @@ function run() {
     //DailyLogs
     var currentDate = new Date().getFullYear() + "-" + (new Date().getMonth() + 1) + "-" + new Date().getDay();
     // var sqlQuery = "SELECT userUserId AS Users FROM dailyFoodLogs WHERE DATE(dateTimeLogged) <= " + currentDate;
-    var sqlQuery = "SELECT DISTINCT(D.userUserId) AS Users, UDM.fcmToken AS Token FROM dailyFoodLogs AS D INNER JOIN users U ON U.userId = D.userUserId INNER JOIN userdevicemappers UDM ON UDM.userUserId = U.userId WHERE DATE(D.dateTimeLogged) <= " + currentDate + " AND U.appNotifications = 1";
+    var sqlQuery = "SELECT DISTINCT(D.userUserId) AS Users, UDM.fcmToken AS Token FROM dailyFoodLogs AS D INNER JOIN users U ON U.userId = D.userUserId INNER JOIN userdevicemappers UDM ON UDM.userUserId = U.userId WHERE DATE(D.dateTimeLogged) < '" + currentDate + "' AND U.appNotifications = 1";
 
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
         console.log(util.inspect(results));
-        console.log("These users haven\'t logged the daily logs" + util.inspect(results[0]));
+        console.log("These users haven\'t logged the daily logs " + util.inspect(results[0]));
         result.users = results[0];
         var notificationToUser = "You haven\'t logged your daily food today. Please log it";
         for (var i = 0; i < results[0].length; i++) {
