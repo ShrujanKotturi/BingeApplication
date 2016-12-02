@@ -15,10 +15,10 @@ function run() {
         console.log("These users haven\'t logged the daily logs " + util.inspect(results[0]));
         result.users = results[0];
         var notificationToUser = "You haven\'t logged your daily food today. Please log it";
-        for (var i = 0; i < results[0].length; i++) {
-            console.log("Result : " + util.inspect(results[0][i]));
+        for (var i = 0; i < results.length; i++) {
+            console.log("Result : " + util.inspect(results[i]));
             var payloadOk = {
-                to: results[0][i].Token,
+                to: results[i].Token,
                 priority: 'high',
                 notification: {
                     title: 'Women Health Project',
