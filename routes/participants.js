@@ -138,9 +138,9 @@ router.get('/getDates', userAuthenticate, function (req, res) {
     console.log(sqlQuery);
     var resultsData = {};
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
-        console.log(util.inspect(metadata));
+        
         resultsData.result = results;
-        console.log(util.inspect(resultsData));
+        
         return res.json(resultsData);
     }).catch(function (error) {
         message = {
