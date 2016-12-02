@@ -563,7 +563,7 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
             return res.status(400).json(message);
         });
 
-        return res.json(message);
+        
     }).catch(function (error) {
         message = {
             'name': 'Failure',
