@@ -3,13 +3,13 @@ var scheduler = require('./routes/scheduler');
 
 module.exports = {
     configure: function (app) {
-        console.log("Scheduler start...");
+        console.log("Scheduler is ON...");
         var dailyRule = new cron.RecurrenceRule();
-        
+
         dailyRule.hour = 19;
         dailyRule.minute = 15;
         cron.scheduleJob(dailyRule, function () {
-            console.log("Scheduler running...");
+            console.log("Daily Scheduler Running...");
             scheduler.daily();
         });
 
@@ -18,10 +18,19 @@ module.exports = {
         weeklyRule.hour = 17;
         weeklyRule.minute = 00;
         cron.scheduleJob(weeklyRule, function () {
-            console.log("Scheduler running...");
+            console.log("Weekly Scheduler Running...");
             scheduler.weekly();
         });
 
+        var motivationalRule = new cron.RecurrenceRule();
+
+        motivationalRule.hour = 8;
+        motivationalRule.minute = 00;
+
+        cron.scheduleJob(motivationalRule, function () {
+            console.log("Coach Running...");
+            scheduler.motivational();
+        });
 
     }
 

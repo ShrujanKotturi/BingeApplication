@@ -211,7 +211,7 @@ router.post('/messagesToUser', supporterAuthenticate, function (req, res) {
     }
 
     db.app.users.findOne({
-        attributes: [['sendMotivationalMessages', 'Permission']],
+        attributes: [['appNotifications', 'Permission']],
         where: {
             userId: body.userId,
             isActive: true
@@ -226,27 +226,24 @@ router.post('/messagesToUser', supporterAuthenticate, function (req, res) {
                         notificationMessage: body.message,
                         dateTimeSent: body.dateTimeSent,
                         from: req.session.supporterId || body.supporterId,
-                        to: body.to
+                        to: body.to,
+                        type: "Challenge"
                     },
                     defaults: {
                         userUserId: body.userId,
                         notificationMessage: body.message,
                         dateTimeSent: body.dateTimeSent,
                         from: req.session.supporterId || body.supporterId,
-                        to: body.to
+                        to: body.to,
+                        type: "Challenge"
                     }
                 }).spread(function (notification, created) {
                     if (!created) {
-                        message = {
-                            'name': 'Failure',
-                            'message': 'A message already exists with given data, couldn\'t send a notification'
-                        };
-                        return res.status(401).json(message);
+                        message.notificationTable = 'A message already exists with given data, couldn\'t send a notification';
                     }
-                    message = {
-                        'name': 'Success',
-                        'message': 'Message log to the table'
-                    };
+                    else {
+                        message.notificationTable = 'Message log to the table';
+                    }
 
                     db.app.userDeviceMapper.findOne({
                         attributes: [['fcmToken', 'Token']],
@@ -255,6 +252,7 @@ router.post('/messagesToUser', supporterAuthenticate, function (req, res) {
                         }
                     }).then(function (deviceMapper) {
                         if (!_.isEmpty(deviceMapper)) {
+
                             var payloadOk = {
                                 to: deviceMapper.dataValues.Token,
                                 priority: 'high',
@@ -471,6 +469,56 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
                         }
                     }).then(function (deviceMapper) {
                         if (!_.isEmpty(deviceMapper)) {
+                            var dateTimeSent = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                            db.app.notifications.findOrCreate({
+                                where: {
+                                    userUserId: body.userId,
+                                    notificationMessage: notificationToUser,
+                                    dateTimeSent: dateTimeSent,
+                                    from: "WHP",
+                                    type: "Appointment",
+                                    to: body.userId
+                                },
+                                defaults: {
+                                    userUserId: body.userId,
+                                    notificationMessage: notificationToUser,
+                                    dateTimeSent: dateTimeSent,
+                                    from: "WHP",
+                                    type: "Appointment",
+                                    to: body.userId
+                                }
+                            }).spread(function (notification, created) {
+                                if (!created) {
+                                    message.notificationTable = 'A message already exists with given data, couldn\'t send a notification';
+                                    console.log(message);
+                                } else {
+                                    message.notificationTable = 'Message log to the table';
+                                    console.log(message);
+                                }
+
+                                var payloadOk = {
+                                    to: deviceMapper.dataValues.Token,
+                                    priority: 'high',
+                                    notification: {
+                                        title: 'Women Health Project',
+                                        body: notificationToUser
+                                    }
+                                };
+                                fcmCli.send(payloadOk, function (err, result) {
+                                    if (err) {
+                                        console.error(err)
+                                    } else {
+                                        console.log(result);
+                                        message.fcm = 'Message in-transit';
+                                        message.result = result;
+                                    }
+                                });
+                            }).catch(function (error) {
+                                message.notificationTableError = util.inspect(error);
+                                console.log(message);
+                                return;
+                            });
+
                             var payloadOk = {
                                 to: deviceMapper.dataValues.Token,
                                 priority: 'high',
@@ -697,23 +745,58 @@ router.post('/assignSteps', supporterAuthenticate, function (req, res) {
                             }
                         }).then(function (deviceMapper) {
                             if (!_.isEmpty(deviceMapper)) {
-                                var payloadOk = {
-                                    to: deviceMapper.dataValues.Token,
-                                    priority: 'high',
-                                    notification: {
-                                        title: 'Women Health Project',
-                                        body: notificationToUser
+                                var dateTimeSent = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                                db.app.notifications.findOrCreate({
+                                    where: {
+                                        userUserId: body.userId,
+                                        notificationMessage: notificationToUser,
+                                        dateTimeSent: dateTimeSent,
+                                        from: "WHP",
+                                        type: "Progress",
+                                        to: body.userId
+                                    },
+                                    defaults: {
+                                        userUserId: body.userId,
+                                        notificationMessage: notificationToUser,
+                                        dateTimeSent: dateTimeSent,
+                                        from: "WHP",
+                                        type: "Progress",
+                                        to: body.userId
                                     }
-                                };
-                                fcmCli.send(payloadOk, function (err, result) {
-                                    if (err) {
-                                        console.error(err)
+                                }).spread(function (notification, created) {
+                                    if (!created) {
+                                        message.notificationTable = 'A message already exists with given data, couldn\'t send a notification';
+                                        console.log(message);
+                                        
                                     } else {
-                                        console.log(result);
-                                        message.fcm = 'Message in-transit';
-                                        message.result = result;
+                                        message.notificationTable = 'Message log to the table';
+                                        console.log(message);
                                     }
+
+                                    var payloadOk = {
+                                        to: deviceMapper.dataValues.Token,
+                                        priority: 'high',
+                                        notification: {
+                                            title: 'Women Health Project',
+                                            body: notificationToUser
+                                        }
+                                    };
+                                    fcmCli.send(payloadOk, function (err, result) {
+                                        if (err) {
+                                            console.error(err)
+                                        } else {
+                                            console.log(result);
+                                            message.fcm = 'Message in-transit';
+                                            message.result = result;
+                                        }
+                                    });
+                                }).catch(function (error) {
+                                    message.notificationTableError = util.inspect(error);
+                                    console.log(message);
+                                    return;
                                 });
+
+
 
                             } else {
                                 message.mapperError = 'Couldn\'t find the Device Token associated with the User';

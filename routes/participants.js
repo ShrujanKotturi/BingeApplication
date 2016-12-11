@@ -138,9 +138,9 @@ router.get('/getDates', userAuthenticate, function (req, res) {
     console.log(sqlQuery);
     var resultsData = {};
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
-        
+
         resultsData.result = results;
-        
+
         return res.json(resultsData);
     }).catch(function (error) {
         message = {
@@ -1278,8 +1278,8 @@ router.post('/addNotes', userAuthenticate, function (req, res) {
             'name': 'Error',
             'message': 'Problem with query parameters'
         };
-        console.log('message: ' +message);
-        console.log('body: ' +util.inspect(body));
+        console.log('message: ' + message);
+        console.log('body: ' + util.inspect(body));
         return res.status(400).send(message);
     }
     var userId = res.locals.userId || req.session.userId;
@@ -1616,6 +1616,45 @@ router.post('/updateResponse', userAuthenticate, function (req, res) {
 
 });
 
+//notifications
+router.get('/getNotifications', userAuthenticate, function (req, res) {
+
+    var query = _.pick(req.query, 'userId');
+    console.log(req.session);
+    if (typeof query.userId !== 'string') {
+        message = {
+            'name': 'Error',
+            'message': 'Problem with query parameters'
+        };
+        console.log(message);
+        return res.status(400).send(message);
+    }
+
+    db.app.notifications.findAll({
+        attributes: [['notificationId', 'Id'], ['notificationMessage', 'Message'], ['dateTimeSent', 'dateTimeSent'], ['from', 'from'], ['type', 'type']],
+        where: {
+            to: res.locals.userId || query.userId
+        },
+        order: [['dateTimeSent', 'DESC']]
+    }).then(function (notifications) {
+        if (!_.isEmpty(notifications)) {
+            var sent = {};
+            sent.notifications = notifications;
+            return res.json(sent);
+        } else {
+            message.name = 'Failure';
+            message.message = 'There are no messages for the user';
+            return res.status(404).send(message);
+        }
+    }).catch(function (error) {
+        message = {
+            'name': error.name,
+            'message': util.inspect(error)
+        };
+        console.log(error);
+        return res.status(400).json(message);
+    });
+});
 
 
 
