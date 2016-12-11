@@ -95,7 +95,7 @@ router.post('/changePassword', adminAuthenticate, function (req, res) {
             data.update({
                 passwordHash: bcrypt.hashSync(body.password, bcrypt.genSaltSync(10))
             }).then(function (data1) {
-                console.log('data1: ' + util.inspect(data1));
+                //console.log('data1: ' + util.inspect(data1));
                 message.name = 'Success';
                 message.message = 'Update to password successful';
                 message.data = data1;

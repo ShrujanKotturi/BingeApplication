@@ -7,8 +7,8 @@
 var app = require('../app');
 var debug = require('debug')('bingeapplication:server');
 var http = require('http'),
-    db = require('../db');
-
+    db = require('../db'),
+    cron = require('../cron');
 /**
  * Get port from environment and store in Express.
  */
@@ -21,7 +21,7 @@ app.set('port', port);
  */
 
 var server = http.createServer(app)
-
+cron.configure(app);
 
 /**
  * Listen on provided port, on all network interfaces.

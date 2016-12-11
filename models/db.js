@@ -5,7 +5,7 @@ var bcrypt = require('bcrypt');
 var _ = require('underscore');
 var db = {};
 
-module.exports = function(sequelize, DataTypes) {
+module.exports = function (sequelize, DataTypes) {
 
     db.users = sequelize.define('users', {
         userId: {
@@ -25,7 +25,7 @@ module.exports = function(sequelize, DataTypes) {
             validate: {
                 len: [7, 100]
             },
-            set: function(value) {
+            set: function (value) {
                 var salt = bcrypt.genSaltSync(10);
                 var hashedPassword = bcrypt.hashSync(value, salt);
 
@@ -68,18 +68,18 @@ module.exports = function(sequelize, DataTypes) {
         }
     }, {
             hooks: {
-                beforeValidate: function(users, options) {
+                beforeValidate: function (users, options) {
                     if (typeof users.userId === 'string') {
                         users.userId = users.userId.toLowerCase();
                     }
                 }
             },
             instanceMethods: {
-                toPublicJSON: function() {
+                toPublicJSON: function () {
                     var json = this.toJSON();
                     return _.pick(json, 'userId', 'isActive', 'age', 'score', 'logNotifications', 'appNotifications', 'quickLog', 'sendMotivationalMessages', 'playGame', 'researcherSupporterId');
                 },
-                toPasswordPublicJSON: function() {
+                toPasswordPublicJSON: function () {
                     var json = this.toJSON();
                     return _.pick(json, 'userId', 'password', 'isActive', 'age', 'score', 'logNotifications', 'appNotifications', 'quickLog', 'sendMotivationalMessages', 'playGame');
                 }
@@ -108,7 +108,7 @@ module.exports = function(sequelize, DataTypes) {
             validate: {
                 len: [7, 100]
             },
-            set: function(value) {
+            set: function (value) {
                 var salt = bcrypt.genSaltSync(10);
                 var hashedPassword = bcrypt.hashSync(value, salt);
 
@@ -135,18 +135,18 @@ module.exports = function(sequelize, DataTypes) {
         }
     }, {
             hooks: {
-                beforeValidate: function(researcher, options) {
+                beforeValidate: function (researcher, options) {
                     if (typeof researcher.supporterId === 'string') {
                         researcher.supporterId = researcher.supporterId.toLowerCase();
                     }
                 }
             },
             instanceMethods: {
-                toPublicJSON: function() {
+                toPublicJSON: function () {
                     var json = this.toJSON();
                     return _.pick(json, 'supporterId', 'contactNumber', 'isAdmin', 'isActive');
                 },
-                toPasswordPublicJSON: function() {
+                toPasswordPublicJSON: function () {
                     var json = this.toJSON();
                     return _.pick(json, 'supporterId', 'password', 'contactNumber', 'isAdmin');
                 }
@@ -420,7 +420,7 @@ module.exports = function(sequelize, DataTypes) {
         deviceId: {
             type: DataTypes.STRING(20),
             allowNull: false
-            
+
         },
         registeredTime: {
             type: DataTypes.DATE,
@@ -634,8 +634,34 @@ module.exports = function(sequelize, DataTypes) {
             timestamps: true,
             createdAt: 'dateCreated',
             updatedAt: 'dateUpdated'
-        }, {
-
+        });
+    db.motivational = sequelize.define('motivationalMessages', {
+        id: {
+            type: DataTypes.INTEGER,
+            primaryKey: true,
+            allowNull: false,
+            autoIncrement: true,
+        },
+        message: {
+            type: DataTypes.STRING(10000),
+            allowNull: false
+        },
+        stepId: {
+            type: DataTypes.STRING(10000),
+            allowNull: false
+        },
+        createdAt: {
+            type: DataTypes.DATE,
+            allowNull: false
+        },
+        updatedAt: {
+            type: DataTypes.DATE,
+            allowNull: false
+        }
+    }, {
+            timestamps: true,
+            createdAt: 'dateCreated',
+            updatedAt: 'dateUpdated'
         });
 
     return db;
