@@ -705,13 +705,13 @@ router.post('/assignSteps', supporterAuthenticate, function (req, res) {
 
         db.app.progress.findOrCreate({
             where: {
-                supporterId: body.stepId,
+                supporterId: body.supporterId,
                 userId: body.userId,
                 status: body.status,
                 responseId: responseId
             },
             defaults: {
-                supporterId: body.stepId,
+                supporterId: body.supporterId,
                 userId: body.userId,
                 status: body.status,
                 responseId: responseId,
@@ -793,10 +793,8 @@ router.post('/assignSteps', supporterAuthenticate, function (req, res) {
                                 }).catch(function (error) {
                                     message.notificationTableError = util.inspect(error);
                                     console.log(message);
-                                    return;
+                                
                                 });
-
-
 
                             } else {
                                 message.mapperError = 'Couldn\'t find the Device Token associated with the User';
@@ -864,7 +862,7 @@ router.get('/getAllSteps', supporterAuthenticate, function (req, res) {
         return res.status(400).send(message);
     }
 
-    var sqlQuery = "SELECT p.progressId AS Id, p.status, p.supporterId, p.dateUpdated AS stepAssignedOn,  s.checkList AS stepQuestions,  r.userResponse AS userResponse FROM progresses p INNER JOIN responses r ON r.responseId = p.responseId INNER JOIN steps s ON s.stepId = r.stepId WHERE p.userId = '" + query.userId + "'";
+    var sqlQuery = "SELECT p.progressId AS Id, p.status, p.supporterId, p.dateUpdated AS stepAssignedOn, r.stepId,  s.checkList AS stepQuestions,  r.userResponse AS userResponse FROM progresses p INNER JOIN responses r ON r.responseId = p.responseId INNER JOIN steps s ON s.stepId = r.stepId WHERE p.userId = '" + query.userId + "'";
     console.log(sqlQuery);
     var resultsData = {};
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
