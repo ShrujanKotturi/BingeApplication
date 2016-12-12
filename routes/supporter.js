@@ -828,7 +828,6 @@ router.post('/assignSteps', supporterAuthenticate, function (req, res) {
                 return res.status(400).json(message);
             });
 
-            return res.send(message);
 
         }).catch(function (error) {
             message = {
