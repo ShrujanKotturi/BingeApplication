@@ -680,7 +680,7 @@ router.get('/getAllSteps', adminAuthenticate, function (req, res) {
         return res.status(400).send(message);
     }
 
-    var sqlQuery = "SELECT p.progressId AS Id, p.status, p.supporterId, p.dateUpdated AS stepAssignedOn,  s.checkList AS stepQuestions,  r.userResponse AS userResponse FROM progresses p INNER JOIN responses r ON r.responseId = p.responseId INNER JOIN steps s ON s.stepId = r.stepId WHERE p.userId = '" + query.userId + "'";
+    var sqlQuery = "SELECT p.progressId AS Id, p.status, p.supporterId,r.stepId, p.dateUpdated AS stepAssignedOn,  s.checkList AS stepQuestions,  r.userResponse AS userResponse FROM progresses p INNER JOIN responses r ON r.responseId = p.responseId INNER JOIN steps s ON s.stepId = r.stepId WHERE p.userId = '" + query.userId + "'";
     console.log(sqlQuery);
     var resultsData = {};
     db.sequelize.query(sqlQuery).spread(function (results, metadata) {
