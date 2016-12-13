@@ -6,7 +6,7 @@ module.exports = {
         console.log("Scheduler is ON...");
         var dailyRule = new cron.RecurrenceRule();
 
-        dailyRule.hour = 16;//19:15 EST
+        dailyRule.hour = 00;//19:15 EST
         dailyRule.minute = 15;
         cron.scheduleJob(dailyRule, function () {
             console.log("Daily Scheduler Running...");
@@ -15,7 +15,7 @@ module.exports = {
 
         var weeklyRule = new cron.RecurrenceRule();
 
-        weeklyRule.hour = 14;//17 EST
+        weeklyRule.hour = 22;//17 EST
         weeklyRule.minute = 00;
         cron.scheduleJob(weeklyRule, function () {
             console.log("Weekly Scheduler Running...");
@@ -24,7 +24,7 @@ module.exports = {
 
         var motivationalRule = new cron.RecurrenceRule();
 
-        motivationalRule.hour = 05;//08 EST
+        motivationalRule.hour = 13;//08 EST
         motivationalRule.minute = 00;
 
         cron.scheduleJob(motivationalRule, function () {

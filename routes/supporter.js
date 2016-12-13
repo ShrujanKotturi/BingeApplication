@@ -583,9 +583,9 @@ router.post('/makeAppointment', supporterAuthenticate, function (req, res) {
 
 router.post('/deleteAppointment', supporterAuthenticate, function (req, res) {
     console.log(req.session);
-    var body = _.pick(req.body, 'appointmentId');
+    var body = _.pick(req.body, 'appointmentId', 'supporterId');
 
-    if (typeof body.appointmentId !== 'string') {
+    if (typeof body.appointmentId !== 'string' || typeof body.supporterId !== 'string') {
         message = {
             'name': 'Error',
             'message': 'Problem with query parameters'
@@ -596,16 +596,13 @@ router.post('/deleteAppointment', supporterAuthenticate, function (req, res) {
     db.app.appointments.find({
         where: {
             appointmentId: body.appointmentId,
-            researcherSupporterId: req.session.supporterId
+            researcherSupporterId: req.session.supporterId || body.supporterId
         }
     }).then(function (data) {
         if (!_.isEmpty(data)) {
             data.destroy();
             message.name = 'Success';
             message.message = 'Appointment deleted';
-
-
-
             return res.json(message);
         }
         else {
@@ -901,7 +898,7 @@ router.get('/getAllSteps', supporterAuthenticate, function (req, res) {
 });
 
 router.post('/updateProgress', supporterAuthenticate, function (req, res) {
-    console.log(req.session);
+
     var responseId;
     var body = _.pick(req.body, 'progressId', 'status');
 
