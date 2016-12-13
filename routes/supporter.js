@@ -708,7 +708,7 @@ router.post('/assignSteps', supporterAuthenticate, function (req, res) {
                     message = {
                         'name': 'Failure',
                         'responseInfo': 'Log in response table exist for the user with the same step',
-                        'error': util.inspect(error);
+                        'error': util.inspect(error)
                     };
                     return res.status(401).json(message);
                 });
