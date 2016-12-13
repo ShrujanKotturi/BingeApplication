@@ -692,16 +692,39 @@ router.post('/assignSteps', supporterAuthenticate, function (req, res) {
         responseId = response.responseId;
 
         if (!(created)) {
-            message = {
-                'name': 'Failure',
-                'responseInfo': 'Log in response table exist for the user with the same step'
-            };
-            return res.status(401).json(message);
+
+            //start
+            db.app.response.build({
+                stepId: body.stepId,
+                userId: body.userId,
+                logDateTime: body.logDateTime,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                userResponse: ""
+            }).save()
+                .then(function (insertedRecord) {
+                    responseId = insertedRecord.responseId;
+                }).catch(function (error) {
+                    message = {
+                        'name': 'Failure',
+                        'responseInfo': 'Log in response table exist for the user with the same step',
+                        'error': util.inspect(error);
+                    };
+                    return res.status(401).json(message);
+                });
+            //end
+
+            // message = {
+            //     'name': 'Failure',
+            //     'responseInfo': 'Log in response table exist for the user with the same step'
+            // };
+            // return res.status(401).json(message);
         }
         message = {
             'name': 'Success',
             'message': 'Log added to response table'
         };
+
 
         db.app.progress.findOrCreate({
             where: {
@@ -767,7 +790,7 @@ router.post('/assignSteps', supporterAuthenticate, function (req, res) {
                                     if (!created) {
                                         message.notificationTable = 'A message already exists with given data, couldn\'t send a notification';
                                         console.log(message);
-                                        
+
                                     } else {
                                         message.notificationTable = 'Message log to the table';
                                         console.log(message);
@@ -793,7 +816,7 @@ router.post('/assignSteps', supporterAuthenticate, function (req, res) {
                                 }).catch(function (error) {
                                     message.notificationTableError = util.inspect(error);
                                     console.log(message);
-                                
+
                                 });
 
                             } else {
