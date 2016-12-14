@@ -51,7 +51,9 @@ router.get('/login', function (req, res) {
         //start of userId update with userDeviceMapper
 
         db.app.userDeviceMapper.find({
-            where: { 'deviceId': query.deviceId }
+            where: { 'deviceId': query.deviceId },
+            order: [['userDeviceMapperId', 'DESC']],
+            limit: 1
         }).then(function (userDevice) {
             if (!_.isEmpty(userDevice)) {
                 userDevice.update({
