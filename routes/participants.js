@@ -229,9 +229,12 @@ router.post('/foodLog', userAuthenticate, function (req, res) {
                 message.logMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
             else
                 message.logMessage = 'Message log to the table';
+
+
         }).catch(function (error) {
             message.logMessage = 'A message already exists with given data, couldn\'t send a notification to the supporter';
             message.error = util.inspect(error);
+            console.log('error : ' + util.inspect(error));
         });
 
         //end of notification logging

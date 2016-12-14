@@ -401,7 +401,7 @@ module.exports = function(sequelize, DataTypes) {
         },
         type: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: true
         }
     }, {
             timestamps: true,
